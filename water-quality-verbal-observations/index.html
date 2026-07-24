@@ -3,9 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kankakee River Environmental Condition Inventory Dashboard - DRAFT</title>
-<meta name="description" content="Draft Kankakee River Environmental Condition Inventory dashboard presenting water-quality sensor readings extracted from verbal field observations.">
-<meta name="robots" content="noindex, nofollow">
+<title>WaterWays SEM – Kankakee River Water Quality Dashboard</title>
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -41,7 +39,8 @@ main{padding:18px 24px;max-width:1600px;margin:auto}
 .stat-box .num{font-size:17px;font-weight:700;color:#17324d;margin-top:3px;white-space:nowrap}
 .stat-unit{font-size:9px;color:#617483;margin-top:1px}
 .map-card{min-width:0}
-.dashboard-workspace{display:grid;grid-template-columns:260px minmax(360px,.9fr) minmax(520px,1.45fr);gap:14px;align-items:start}
+.dashboard-workspace{display:grid;grid-template-columns:250px 220px minmax(360px,1fr) minmax(440px,1.18fr);gap:14px;align-items:start}
+.stats-column{display:flex;flex-direction:column;gap:12px;position:sticky;top:12px;align-self:start;min-width:0}
 .sidebar{display:flex;flex-direction:column;gap:12px;position:sticky;top:12px;align-self:start}
 .sidebar-panel{background:white;border:1px solid var(--border);border-radius:8px;padding:11px}
 .sidebar-panel h2{font-size:14px;color:var(--ink);margin:0 0 9px}
@@ -73,6 +72,17 @@ main{padding:18px 24px;max-width:1600px;margin:auto}
 .sidebar-note{font-size:11px;line-height:1.35;color:#526675;padding:6px 0;border-top:1px solid #e5edf1}
 .sidebar-note:first-of-type{border-top:none;padding-top:0}
 .plot-card,.map-card{min-width:0}
+
+/* Keep the chart and map visible while the longer Interpretation Notes are reviewed.
+   This applies only to the full four-column desktop layout. */
+@media(min-width:1221px){
+  .plot-card,.map-card{
+    position:sticky;
+    top:12px;
+    align-self:start;
+  }
+}
+
 #chart{height:690px}
 #map{height:690px}
 
@@ -110,7 +120,7 @@ main{padding:18px 24px;max-width:1600px;margin:auto}
   .ww-logo{width:155px!important;max-width:22%!important}
   main{padding:6px!important;max-width:none!important}
   .dashboard-workspace{display:block!important}
-  .sidebar{display:block!important;position:static!important}
+  .sidebar,.stats-column{display:block!important;position:static!important}
   .sidebar-panel,.card{
     box-shadow:none!important;
     border:1px solid #aebdc5!important;
@@ -166,7 +176,7 @@ main{padding:18px 24px;max-width:1600px;margin:auto}
     row-gap:0!important;
     align-items:start!important;
   }
-  .sidebar{grid-column:1/-1!important}
+  .sidebar,.stats-column{grid-column:1/-1!important}
   .plot-card,.map-card{
     break-inside:avoid-page!important;
     page-break-inside:avoid!important;
@@ -273,7 +283,17 @@ main{padding:18px 24px;max-width:1600px;margin:auto}
   </div>
 </section>
 
-    
+<section class="sidebar-panel notes-panel">
+  <h2>Interpretation Notes</h2>
+  <div class="sidebar-note"><strong>Nitrate:</strong> raw, uncorrected Eureka multiprobe estimates.</div>
+  <div class="sidebar-note"><strong>Value slider:</strong> filters the plot, map, and statistics within the selected parameter range. <strong>Map color:</strong> remains continuous within the values currently shown; intermediate colors do not indicate condition thresholds.<br><strong>Observation text:</strong> omitted from chart and map pop-ups to keep them concise. The original narrative observations remain available in the source spreadsheet.<br><strong>Chart pop-ups:</strong> include the river segment name so the displayed segment remains identifiable when “All segments” is selected and the value slider narrows the visible records.</div>
+  <div class="sidebar-note"><strong>Marker shape:</strong> circle = likely mainstem; diamond = potential inflow influence.</div>
+  <div class="sidebar-note"><strong>Export Current View:</strong> downloads a CSV containing only records visible after all active segment, context, data-quality, range-of-concern, and value-range filters. The export begins with a short description of the selected view. <strong>Print:</strong> uses a two-page landscape layout. Page 1 keeps the dashboard controls, statistics, and notes together. Page 2 places the displayed time chart and map side-by-side, with their legends and explanatory information. The displayed-view status documents the active filters.</div>
+</section>
+
+  </aside>
+
+  <aside class="stats-column">
 <section class="sidebar-panel stats-panel">
   <h2>Summary Statistics</h2>
   <div class="sidebar-stats-grid">
@@ -284,14 +304,13 @@ main{padding:18px 24px;max-width:1600px;margin:auto}
       <div class="stat-box"><div class="name">Std. deviation</div><div class="num" id="sd">—</div><div class="stat-unit" id="unit5"></div></div>
 
       <div class="stat-box"><div class="name">Minimum</div><div class="num" id="min">—</div><div class="stat-unit" id="unit3"></div></div>
-      <div class="stat-box"><div class="name">5th percentile</div><div class="num" id="p05">—</div></div>
-      <div class="stat-box"><div class="name">25th percentile</div><div class="num" id="p25">—</div></div>
-      <div class="stat-box"><div class="name">50th percentile</div><div class="num" id="p50">—</div></div>
+      <div class="stat-box"><div class="name">5th percentile</div><div class="num" id="p05">—</div><div class="stat-unit" id="unit6"></div></div>
+      <div class="stat-box"><div class="name">25th percentile</div><div class="num" id="p25">—</div><div class="stat-unit" id="unit7"></div></div>
 
-      <div class="stat-box"><div class="name">75th percentile</div><div class="num" id="p75">—</div></div>
-      <div class="stat-box"><div class="name">95th percentile</div><div class="num" id="p95">—</div></div>
+      <div class="stat-box"><div class="name">75th percentile</div><div class="num" id="p75">—</div><div class="stat-unit" id="unit8"></div></div>
+      <div class="stat-box"><div class="name">95th percentile</div><div class="num" id="p95">—</div><div class="stat-unit" id="unit9"></div></div>
       <div class="stat-box"><div class="name">Maximum</div><div class="num" id="max">—</div><div class="stat-unit" id="unit4"></div></div>
-      <div class="stat-box"><div class="name">Interquartile range</div><div class="num" id="iqr">—</div></div>
+      <div class="stat-box"><div class="name">Interquartile range</div><div class="num" id="iqr">—</div><div class="stat-unit" id="unit10"></div></div>
 
       <div class="stat-box"><div class="name">Segments represented</div><div class="num" id="segmentsN">—</div></div>
       <div class="stat-box"><div class="name">Likely mainstem readings</div><div class="num" id="mainstemN">—</div></div>
@@ -301,17 +320,8 @@ main{padding:18px 24px;max-width:1600px;margin:auto}
   </div>
   <div class="legend-note" id="printStatus"></div>
 </section>
-
-    
-<section class="sidebar-panel notes-panel">
-  <h2>Interpretation Notes</h2>
-  <div class="sidebar-note"><strong>Nitrate:</strong> raw, uncorrected Eureka multiprobe estimates.</div>
-  <div class="sidebar-note"><strong>Value slider:</strong> filters the plot, map, and statistics within the selected parameter range. <strong>Map color:</strong> remains continuous within the values currently shown; intermediate colors do not indicate condition thresholds.<br><strong>Observation text:</strong> omitted from chart and map pop-ups to keep them concise. The original narrative observations remain available in the source spreadsheet.<br><strong>Chart pop-ups:</strong> include the river segment name so the displayed segment remains identifiable when “All segments” is selected and the value slider narrows the visible records.</div>
-  <div class="sidebar-note"><strong>Marker shape:</strong> circle = likely mainstem; diamond = potential inflow influence.</div>
-  <div class="sidebar-note"><strong>Export Current View:</strong> downloads a CSV containing only records visible after all active segment, context, data-quality, range-of-concern, and value-range filters. The export begins with a short description of the selected view. <strong>Print:</strong> uses a two-page landscape layout. Page 1 keeps the dashboard controls, statistics, and notes together. Page 2 places the displayed time chart and map side-by-side, with their legends and explanatory information. The displayed-view status documents the active filters.</div>
-</section>
-
   </aside>
+
 
   <section class="card plot-card">
     <h2 id="chartTitle">Parameter profile</h2>
@@ -529,14 +539,13 @@ function update(){
  document.getElementById('min').textContent=values.length?fmt(Math.min(...values)):'—';
  document.getElementById('max').textContent=values.length?fmt(Math.max(...values)):'—';
  document.getElementById('sd').textContent=fmt(stdev(values));
- const p05=percentile(values,.05),p25=percentile(values,.25),p50=percentile(values,.50),p75=percentile(values,.75),p95=percentile(values,.95);
+ const p05=percentile(values,.05),p25=percentile(values,.25),p75=percentile(values,.75),p95=percentile(values,.95);
  document.getElementById('p05').textContent=fmt(p05);
  document.getElementById('p25').textContent=fmt(p25);
- document.getElementById('p50').textContent=fmt(p50);
  document.getElementById('p75').textContent=fmt(p75);
  document.getElementById('p95').textContent=fmt(p95);
  document.getElementById('iqr').textContent=Number.isFinite(p25)&&Number.isFinite(p75)?fmt(p75-p25):'—';
- ['unit1','unit2','unit3','unit4','unit5'].forEach(id=>document.getElementById(id).textContent=param.unit||'');
+ ['unit1','unit2','unit3','unit4','unit5','unit6','unit7','unit8','unit9','unit10'].forEach(id=>document.getElementById(id).textContent=param.unit||'');
  document.getElementById('segmentsN').textContent=new Set(valid.map(d=>d['River Segment'])).size;
  document.getElementById('inflowN').textContent=valid.filter(d=>d['Mainstem Context']==='Potential inflow influence').length;
  document.getElementById('mainstemN').textContent=valid.filter(d=>d['Mainstem Context']!=='Potential inflow influence').length;
@@ -682,23 +691,29 @@ update();
 </body>
 </html>
 <style>
-@media(max-width:1250px){
-  .dashboard-workspace{grid-template-columns:230px minmax(330px,1fr) minmax(430px,1.2fr)}
+@media(max-width:1500px){
+  .dashboard-workspace{grid-template-columns:235px 205px minmax(330px,1fr) minmax(390px,1.12fr);gap:11px}
 }
-@media(max-width:1000px){
-  .dashboard-workspace{grid-template-columns:230px 1fr}
-  .map-card{grid-column:2}
-  .sidebar{grid-row:1 / span 2}
+@media(max-width:1220px){
+  .dashboard-workspace{grid-template-columns:235px 205px minmax(0,1fr)}
+  .map-card{grid-column:3}
+  .stats-column{grid-column:2;grid-row:1;position:sticky}
+  .plot-card{grid-column:3;grid-row:1}
+  .map-card{grid-row:2}
+  #chart{height:520px}
+  #map{height:560px}
+}
+@media(max-width:900px){
+  .dashboard-workspace{grid-template-columns:1fr 1fr}
+  .sidebar,.stats-column{position:static}
+  .plot-card,.map-card{grid-column:1 / -1}
+  .sidebar-stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   #chart{height:500px}
   #map{height:560px}
 }
-@media(max-width:760px){
+@media(max-width:620px){
   .dashboard-workspace{grid-template-columns:1fr}
-  .sidebar{position:static}
-  .map-card{grid-column:auto}
-  .sidebar-stats-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
-}
-@media(max-width:520px){
+  .sidebar,.stats-column,.plot-card,.map-card{grid-column:auto!important;grid-row:auto!important}
   .sidebar-stats-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 </style>

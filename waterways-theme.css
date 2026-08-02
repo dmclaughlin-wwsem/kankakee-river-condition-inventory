@@ -1,0 +1,201 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&family=Mulish:wght@300;400;500;600;700&display=swap');
+
+:root{
+  --ww-superior:#A1DCF2;
+  --ww-ontario:#3C82BE;
+  --ww-michigan:#BFA145;
+  --ww-huron:#6C7338;
+  --ww-erie:#25381A;
+  --ww-white:#FFFFFF;
+  --ww-soft:#F5F8F4;
+  --ww-border:#C8D5C3;
+  --ww-shadow:0 8px 24px rgba(37,56,26,.12);
+  --ww-radius:12px;
+}
+
+html,body{
+  color:var(--ww-erie);
+  font-family:"Mulish",Arial,sans-serif;
+  background:var(--ww-soft);
+}
+
+h1,h2,h3,h4,
+button,
+.action-button,
+.top-nav a,
+.dashboard-copy a,
+.nav-card a{
+  font-family:"Lato",Arial,sans-serif;
+}
+
+h1,h2,h3{font-weight:700}
+p,li,span,div,input,select{font-family:"Mulish",Arial,sans-serif}
+
+.site-banner{
+  background:linear-gradient(120deg,var(--ww-erie),#315029 58%,var(--ww-huron));
+  border-bottom:6px solid var(--ww-michigan);
+}
+.eyebrow{color:var(--ww-superior)}
+.banner-subtitle{color:var(--ww-white)}
+.partner-line{color:#F3F8F2}
+.logo-box{
+  border-color:rgba(255,255,255,.65);
+  background:rgba(255,255,255,.10);
+}
+
+.top-nav{border-bottom-color:var(--ww-border)}
+.top-nav a{color:var(--ww-erie)}
+.top-nav a:hover,.top-nav a:focus{
+  background:var(--ww-superior);
+  color:var(--ww-erie);
+}
+
+.welcome-panel,
+.nav-card,
+.dashboard-card,
+.library-card,
+.project-stat,
+.info-dialog{
+  border-color:var(--ww-border);
+  border-radius:var(--ww-radius);
+  box-shadow:var(--ww-shadow);
+}
+
+.action-button,
+.dashboard-copy a,
+.nav-card a,
+.nav-card button{
+  background:var(--ww-ontario);
+  color:var(--ww-white);
+}
+.action-button.secondary{background:var(--ww-huron)}
+.action-button.tertiary{background:var(--ww-michigan);color:var(--ww-erie)}
+.action-button:hover,
+.dashboard-copy a:hover,
+.nav-card a:hover,
+.nav-card button:hover{filter:brightness(.94)}
+
+.explorer-section{background:#E7EFE4}
+.explorer-heading h2,
+.page-section h2,
+.nav-card h3,
+.dashboard-copy h3,
+.library-card h3{color:var(--ww-erie)}
+.section-lead,
+.nav-card p,
+.dashboard-copy p,
+.library-card p{color:#4B5D43}
+
+.project-stat strong{color:var(--ww-ontario)}
+.coming-soon{
+  background:var(--ww-superior);
+  color:var(--ww-erie);
+}
+
+.site-footer{
+  background:var(--ww-erie);
+  color:#F4F8F2;
+}
+
+#earthviewsHeader{background:var(--ww-erie)}
+#earthviewsActions a{background:var(--ww-ontario)}
+.replay-card{background:#F7FAF6;border-color:var(--ww-border)}
+.replay-card h2{color:var(--ww-erie)}
+.replay-controls button{background:var(--ww-ontario)}
+.replay-controls button:hover{background:#2F6FA5}
+
+.dashboard-thumb.obs{background:linear-gradient(135deg,var(--ww-michigan),#D9C576);color:var(--ww-erie)}
+.dashboard-thumb.water{background:linear-gradient(135deg,var(--ww-superior),var(--ww-ontario));color:var(--ww-erie)}
+.dashboard-thumb.habitat{background:linear-gradient(135deg,#A8B17B,var(--ww-huron));color:var(--ww-white)}
+.dashboard-thumb.nutrients{background:linear-gradient(135deg,#D7EEF6,var(--ww-superior));color:var(--ww-erie)}
+
+.dashboard-card.coming-soon-card{
+  opacity:.92;
+}
+.dashboard-card.coming-soon-card .dashboard-copy a{
+  background:#DDE5DA;
+  color:#64705E;
+  pointer-events:none;
+  cursor:default;
+}
+
+
+/* Version 11 connected dashboard gallery */
+.dashboard-card{
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.live-dashboard-card{
+  cursor:pointer;
+}
+.live-dashboard-card:hover,
+.live-dashboard-card:focus{
+  transform:translateY(-4px) scale(1.012);
+  box-shadow:0 14px 34px rgba(37,56,26,.20);
+  border-color:var(--ww-ontario);
+  outline:none;
+}
+.live-dashboard-card:focus-visible{
+  outline:3px solid var(--ww-michigan);
+  outline-offset:3px;
+}
+.live-dashboard-card .dashboard-copy a{
+  transition:background .18s ease, transform .18s ease;
+}
+.live-dashboard-card:hover .dashboard-copy a{
+  background:#2F6FA5;
+  transform:translateY(-1px);
+}
+.dashboard-status{
+  display:inline-block;
+  align-self:flex-start;
+  margin-bottom:8px;
+  padding:5px 9px;
+  border-radius:999px;
+  background:var(--ww-superior);
+  color:var(--ww-erie);
+  font-family:"Lato",Arial,sans-serif;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.disabled-dashboard-button{
+  margin-top:auto;
+  display:block;
+  padding:9px 11px;
+  border-radius:6px;
+  background:#DDE5DA;
+  color:#64705E;
+  text-align:center;
+  font-family:"Lato",Arial,sans-serif;
+  font-weight:700;
+}
+.coming-preview{
+  width:78%;
+  min-height:82px;
+  border:2px solid rgba(37,56,26,.25);
+  border-radius:8px;
+  background:rgba(255,255,255,.65);
+  padding:10px;
+  text-align:center;
+}
+.coming-preview-title{
+  font-family:"Lato",Arial,sans-serif;
+  font-weight:700;
+  margin-bottom:8px;
+}
+.coming-preview-map{
+  font-size:12px;
+  line-height:1.45;
+  color:#4D6044;
+}
+
+
+/* Version 12 moveable EarthViews preview */
+#earthviewsPanel{border-color:var(--ww-border)}
+#earthviewsHeader{background:var(--ww-erie)}
+#earthviewsExpand{
+  background:var(--ww-superior) !important;
+  color:var(--ww-erie) !important;
+}

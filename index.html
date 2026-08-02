@@ -1,60 +1,1357 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kankakee River Environmental Condition Inventory</title>
-
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kankakee River Explorer — Welcome Page Version 14</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <style>
-body{
-    font-family:Arial,Helvetica,sans-serif;
-    max-width:900px;
-    margin:40px auto;
-    padding:20px;
-    line-height:1.5;
+html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif}
+body{display:grid;grid-template-columns:300px minmax(0,1fr);background:#fff}
+#side{padding:16px;overflow:auto;border-right:1px solid #ccd3d8}
+#map{height:100vh;width:100%;background:#dfe6e9}
+h1{font-size:20px;margin:0 0 6px}
+.intro{font-size:13px;color:#52606d;line-height:1.4;margin-bottom:14px}
+.row{display:grid;grid-template-columns:22px 16px 1fr;gap:7px;align-items:start;padding:8px 0;border-bottom:1px solid #e8ecef}
+.swatch{height:5px;border-radius:3px;margin-top:6px}
+.name{font-size:13px;font-weight:bold}
+.meta{font-size:11px;color:#64727d;margin-top:2px}
+button{width:100%;padding:9px;margin-top:8px;background:#fff;border:1px solid #aeb8bf;border-radius:6px;cursor:pointer}
+.note{font-size:11px;color:#64727d;line-height:1.4;margin-top:14px}
+@media(max-width:760px){body{grid-template-columns:1fr;grid-template-rows:auto 1fr}#side{max-height:38vh;border-right:0;border-bottom:1px solid #ccd3d8}#map{height:62vh}}
+
+.leaflet-tooltip.segment-label{
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(50,65,75,.65);
+  border-radius:5px;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
+  color:#1f2933;
+  font-size:11px;
+  font-weight:700;
+  line-height:1.2;
+  padding:4px 6px;
+  text-align:center;
+  white-space:normal;
+  width:210px;
 }
-h1{color:#1b4f72;}
-ul{font-size:1.15em;}
-li{margin:18px 0;}
-a{
-    text-decoration:none;
-    color:#0b5fa5;
-    font-weight:bold;
+.leaflet-tooltip.segment-label:before{
+  display:block;
+  border-top-color:rgba(50,65,75,.65);
 }
-a:hover{
-    text-decoration:underline;
+
+
+#map.low-zoom .leaflet-tooltip.segment-label{
+  width:190px;
+  font-size:10px;
+  padding:3px 5px;
 }
+
+
+.leader-line{
+  stroke:#4b5563;
+  stroke-width:1.5;
+  stroke-opacity:.8;
+  stroke-linecap:round;
+  pointer-events:none;
+}
+.leader-anchor{
+  fill:#4b5563;
+  fill-opacity:.85;
+  stroke:#ffffff;
+  stroke-width:1;
+  pointer-events:none;
+}
+
+
+.leaflet-tooltip.segment-label{
+  pointer-events:auto;
+}
+.segment-video-link{
+  display:inline-block;
+  margin-top:4px;
+  color:#0b57d0;
+  font-size:11px;
+  font-weight:700;
+  text-decoration:underline;
+  cursor:pointer;
+}
+.segment-video-link:hover,
+.segment-video-link:focus{
+  color:#063b91;
+}
+
+.segment-earthviews-link{
+  display:inline-block;
+  margin-top:3px;
+  color:#0b6b3a;
+  font-size:11px;
+  font-weight:700;
+  text-decoration:underline;
+  cursor:pointer;
+}
+.segment-earthviews-link:hover,
+.segment-earthviews-link:focus{
+  color:#064425;
+}
+#videoModal{
+  position:fixed;
+  inset:0;
+  z-index:10000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(0,0,0,.72);
+  padding:20px;
+}
+#videoModal.open{display:flex;}
+#videoDialog{
+  width:min(900px,96vw);
+  background:#fff;
+  border-radius:10px;
+  box-shadow:0 10px 35px rgba(0,0,0,.45);
+  overflow:hidden;
+}
+#videoHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:10px 14px;
+  border-bottom:1px solid #d8dde1;
+}
+#videoTitle{
+  margin:0;
+  font-size:16px;
+  line-height:1.25;
+}
+#videoClose{
+  width:auto;
+  margin:0;
+  padding:5px 10px;
+  font-size:18px;
+  line-height:1;
+}
+#flyoverVideo{
+  display:block;
+  width:100%;
+  max-height:75vh;
+  background:#000;
+}
+
+
+.flyover-info-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:17px;
+  height:17px;
+  margin-left:4px;
+  padding:0;
+  border:1px solid #64748b;
+  border-radius:50%;
+  background:#fff;
+  color:#334155;
+  font-size:11px;
+  font-weight:700;
+  line-height:1;
+  vertical-align:middle;
+  cursor:pointer;
+}
+.flyover-info-button:hover,
+.flyover-info-button:focus{
+  background:#eef4ff;
+  color:#0b57d0;
+  border-color:#0b57d0;
+  outline:none;
+}
+#flyoverInfoPopover{
+  position:fixed;
+  z-index:11000;
+  display:none;
+  width:min(330px,calc(100vw - 24px));
+  padding:11px 12px;
+  background:#fff;
+  border:1px solid #94a3b8;
+  border-radius:8px;
+  box-shadow:0 6px 22px rgba(0,0,0,.28);
+  color:#1f2937;
+  font-size:12px;
+  font-weight:400;
+  line-height:1.4;
+  text-align:left;
+}
+#flyoverInfoPopover.open{display:block;}
+#flyoverInfoPopover strong{display:block;margin-bottom:4px;font-size:13px;}
+
+
+.summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0 14px}
+.stat-card{border:1px solid #d7dee3;border-radius:7px;padding:8px;background:#f8fafb}
+.stat-value{font-size:18px;font-weight:700;color:#17313d;line-height:1.1}
+.stat-label{font-size:10px;color:#60717d;margin-top:3px;line-height:1.25}
+.trip-stats{margin:3px 0 0;font-size:11px;color:#455a64;line-height:1.45}
+.trip-stats strong{color:#253842}
+.stats-note{font-size:10px;color:#687983;line-height:1.35;margin:8px 0 12px}
+
+/* Trip replay */
+body{grid-template-columns:340px minmax(0,1fr)}
+.replay-card{margin:14px 0;padding:12px;border:1px solid #b8c8cf;border-radius:9px;background:#f4f8f9}
+.replay-card h2{font-size:15px;margin:0 0 8px;color:#17313d}
+.replay-controls{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.replay-controls button,.replay-controls select{width:100%;margin:0;padding:8px}
+.replay-controls select{border:1px solid #aeb8bf;border-radius:6px;background:#fff}
+.replay-progress{width:100%;margin:10px 0 4px}
+.replay-status{font-size:12px;line-height:1.4;color:#344b56;margin-top:7px}
+.replay-status strong{color:#17313d}
+.replay-note{font-size:10px;color:#64727d;line-height:1.35;margin-top:7px}
+#earthviewsPanel{
+  position:absolute;
+  z-index:1100;
+  left:auto;
+  right:2%;
+  top:18px;
+  bottom:auto;
+  width:min(944px,64%);
+  min-width:480px;
+  max-width:calc(100% - 30px);
+  min-height:300px;
+  max-height:calc(100% - 30px);
+  transform:none;
+  resize:both;
+  overflow:auto;
+}
+#earthviewsPanel.hidden{display:none}
+#earthviewsPanel.collapsed #earthviewsBody{display:none}
+#earthviewsHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;background:#17313d;color:#fff}
+#earthviewsHeader h2{font-size:14px;margin:0}
+#earthviewsHeader button{width:auto;margin:0;padding:4px 8px;background:#fff;color:#17313d}
+#earthviewsBody{padding:9px}
+#earthviewsMeta{font-size:12px;color:#405862;line-height:1.4;margin-bottom:7px}
+#earthviewsFrame{display:block;width:100%;height:clamp(240px,38vh,520px);border:1px solid #c7d2d8;border-radius:6px;background:#eef3f5}
+#earthviewsActions{display:flex;gap:7px;margin-top:7px}
+#earthviewsActions a{display:inline-block;background:#245b78;color:#fff;padding:7px 9px;border-radius:5px;text-decoration:none;font-size:12px}
+.replay-marker{background:#fff;border:3px solid #0b6b3a;border-radius:50%;width:22px;height:22px;box-shadow:0 2px 7px rgba(0,0,0,.45);position:relative}
+.replay-marker:after{content:"";position:absolute;left:6px;top:3px;width:5px;height:10px;border-right:3px solid #0b6b3a;border-bottom:3px solid #0b6b3a;transform:rotate(45deg)}
+.rm-replay-icon{background:#fff;border:2px solid #153c52;border-radius:4px;color:#153c52;font:700 10px/18px Arial;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+@media(max-width:900px){body{grid-template-columns:1fr;grid-template-rows:auto 1fr}#side{max-height:47vh}#map{height:53vh}#earthviewsPanel{width:calc(100% - 28px);max-height:48vh}#earthviewsFrame{height:220px}}
+
+
+/* Public welcome-page shell */
+html,body{height:auto;min-height:100%;scroll-behavior:smooth}
+body{display:block;background:#eef3f2;color:#17313d}
+.site-banner{
+  background:linear-gradient(120deg,#123d4b,#1d6370 58%,#416c58);
+  color:#fff;padding:30px 24px 26px;border-bottom:5px solid #d3aa55
+}
+.banner-inner{max-width:1500px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center}
+.eyebrow{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:#dcebea}
+.site-banner h1{font-size:clamp(32px,5vw,62px);line-height:1;margin:8px 0 10px}
+.banner-subtitle{font-size:clamp(16px,2vw,23px);margin:0 0 18px;color:#e9f3f1}
+.partner-line{font-size:14px;line-height:1.55;color:#f4f8f7}
+.logo-placeholders{display:grid;grid-template-columns:repeat(3,120px);gap:10px}
+.logo-box{height:78px;border:1px solid rgba(255,255,255,.5);border-radius:8px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;font-size:11px}
+.top-nav{background:#fff;border-bottom:1px solid #cfd9d7;position:sticky;top:0;z-index:900}
+.top-nav-inner{max-width:1500px;margin:auto;display:flex;flex-wrap:wrap;gap:4px;padding:8px 18px}
+.top-nav a{color:#17313d;text-decoration:none;font-weight:700;font-size:13px;padding:9px 12px;border-radius:6px}
+.top-nav a:hover,.top-nav a:focus{background:#e6f0ee}
+.page-section{max-width:1500px;margin:0 auto;padding:34px 22px}
+.page-section h2{font-size:28px;margin:0 0 10px;color:#17313d}
+.section-lead{max-width:1000px;font-size:17px;line-height:1.6;color:#405862;margin:0 0 22px}
+.welcome-panel{background:#fff;border:1px solid #d3dedb;border-radius:12px;padding:24px;margin-top:-18px;position:relative;z-index:2;box-shadow:0 5px 18px rgba(32,65,68,.09)}
+.action-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:20px}
+.action-button{display:block;text-decoration:none;border-radius:10px;padding:18px;background:#1d6370;color:#fff;font-weight:700;text-align:center;font-size:16px}
+.action-button.secondary{background:#416c58}
+.action-button.tertiary{background:#7a5d30}
+.nav-card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
+.nav-card{background:#fff;border:1px solid #d1dcda;border-radius:12px;padding:20px;min-height:185px;display:flex;flex-direction:column}
+.nav-card h3{font-size:19px;margin:0 0 9px}
+.nav-card p{color:#52656b;line-height:1.5;margin:0 0 18px}
+.nav-card a,.nav-card button{margin-top:auto;display:inline-block;width:auto;align-self:flex-start;background:#17313d;color:#fff;border:0;text-decoration:none;padding:9px 12px;border-radius:6px;font-weight:700}
+.explorer-section{max-width:none;padding:28px 18px 38px;background:#dfe8e6}
+.explorer-heading{max-width:1500px;margin:0 auto 14px}
+.explorer-shell{position:relative;max-width:2000px;width:125%;height:900px;zoom:.8;margin:0 auto;background:#fff;border:1px solid #bbc9c6;border-radius:12px;overflow:visible;display:grid;grid-template-columns:340px minmax(0,1fr);box-shadow:0 8px 28px rgba(29,68,71,.13)}
+.explorer-shell #side{padding:16px;overflow:auto;border-right:1px solid #ccd3d8;background:#fff}
+.explorer-shell #map{height:900px;width:100%;background:#dfe6e9}
+.project-stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.project-stat{background:#fff;border:1px solid #d1dcda;border-radius:10px;padding:16px;text-align:center}
+.project-stat strong{display:block;font-size:26px;color:#1d6370}
+.project-stat span{font-size:12px;color:#5a6d72}
+.dashboard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.dashboard-card{background:#fff;border:1px solid #d1dcda;border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.dashboard-thumb{height:125px;background:linear-gradient(135deg,#d5e7e4,#a9cac5);display:flex;align-items:center;justify-content:center;font-size:38px;color:#1d6370}
+.dashboard-copy{padding:18px;display:flex;flex-direction:column;flex:1}
+.dashboard-copy h3{margin:0 0 8px;font-size:18px}
+.dashboard-copy p{margin:0 0 16px;color:#52656b;line-height:1.45}
+.dashboard-copy a{margin-top:auto;text-decoration:none;background:#1d6370;color:#fff;padding:9px 11px;border-radius:6px;text-align:center;font-weight:700}
+.library-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.library-card{background:#fff;border:1px solid #d1dcda;border-radius:10px;padding:18px}
+.coming-soon{display:inline-block;background:#e8efed;color:#53666b;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}
+.site-footer{background:#17313d;color:#eaf2f0;padding:28px 22px}
+.footer-inner{max-width:1500px;margin:auto;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;font-size:13px;line-height:1.6}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.66);z-index:12000;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.info-dialog{max-width:760px;max-height:88vh;overflow:auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 12px 38px rgba(0,0,0,.4)}
+.info-dialog h2{margin-top:0}
+.info-dialog button{width:auto;float:right;margin:0 0 12px 12px}
+@media(max-width:1100px){
+  .banner-inner{grid-template-columns:1fr}.logo-placeholders{grid-template-columns:repeat(3,1fr)}
+  .nav-card-grid,.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .project-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .explorer-shell{height:1050px;grid-template-columns:320px minmax(0,1fr)}
+  .explorer-shell #map{height:1050px}
+}
+@media(max-width:760px){
+  .action-row,.nav-card-grid,.dashboard-grid,.library-grid,.project-stats{grid-template-columns:1fr}
+  .logo-placeholders{grid-template-columns:1fr}
+  .explorer-shell{height:auto;display:block}
+  .explorer-shell #side{max-height:none;border-right:0;border-bottom:1px solid #ccd3d8}
+  .explorer-shell #map{height:70vh}
+  #earthviewsPanel{width:calc(100% - 20px)!important;left:10px!important;right:auto!important;transform:none!important}
+}
+
+
+.explorer-shell #map{
+  border-top-right-radius:12px;
+  border-bottom-right-radius:12px;
+  overflow:hidden;
+}
+
+
+#earthviewsMeta{
+  background:#eef4f3;
+  border:1px solid #d3dfdc;
+  border-radius:6px;
+  padding:8px 10px;
+  margin-bottom:8px;
+  color:#29434a;
+}
+#earthviewsActions{
+  justify-content:space-between;
+  align-items:center;
+}
+#earthviewsLocationCaption{
+  font-size:12px;
+  color:#405862;
+  line-height:1.35;
+}
+
+
+.explorer-section{overflow:hidden}
+.explorer-shell{margin-left:auto;margin-right:auto}
+.explorer-display-note{
+  max-width:1600px;
+  margin:0 auto 10px;
+  font-size:12px;
+  color:#53666b;
+}
+@supports not (zoom:1){
+  .explorer-shell{
+    width:125%;
+    transform:scale(.8);
+    transform-origin:top center;
+    margin-bottom:-180px;
+  }
+}
+
+
+
+
+#earthviewsHeader{
+  cursor:move;
+  user-select:none;
+  touch-action:none;
+}
+#earthviewsHeader .preview-window-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+#earthviewsHeader .preview-window-actions button{
+  cursor:pointer;
+}
+#earthviewsPanel.dragging{
+  opacity:.97;
+  box-shadow:0 12px 32px rgba(0,0,0,.38);
+}
+#earthviewsPanel.expanded{
+  left:1.5% !important;
+  right:auto !important;
+  top:10px !important;
+  width:97% !important;
+  height:calc(100% - 20px) !important;
+  max-width:none !important;
+  max-height:none !important;
+  resize:none !important;
+}
+#earthviewsPanel.expanded #earthviewsBody{
+  height:calc(100% - 48px);
+  display:flex;
+  flex-direction:column;
+}
+#earthviewsPanel.expanded #earthviewsFrame{
+  flex:1;
+  min-height:300px;
+  height:auto;
+}
+.preview-resize-note{
+  font-size:10px;
+  color:#66756B;
+  margin-top:5px;
+  text-align:right;
+}
+
 </style>
-
+  <link rel="stylesheet" href="waterways-theme.css">
 </head>
-
 <body>
+<header class="site-banner">
+  <div class="banner-inner">
+    <div>
+      <div class="eyebrow">WaterWays-branded public river discovery platform</div>
+      <h1>Kankakee River Explorer</h1>
+      <p class="banner-subtitle">Explore the river through science, recreation, and immersive media.</p>
+      <div class="partner-line">
+        A project of the <strong>Pokagon Band of Potawatomi</strong> in cooperation with
+        <strong>WaterWays|SEM, L3C</strong><br>
+        Funding provided by the <strong>U.S. Environmental Protection Agency Great Lakes Restoration Initiative</strong>
+      </div>
+    </div>
+    <div class="logo-placeholders" aria-label="Project partner logo placeholders">
+      <div class="logo-box">Pokagon Band logo</div>
+      <div class="logo-box"><strong>WaterWays|SEM, L3C</strong><br>Science • Education • Management</div>
+      <div class="logo-box">USEPA GLRI logo</div>
+    </div>
+  </div>
+</header>
 
-<h1>Kankakee River Environmental Condition Inventory</h1>
+<nav class="top-nav" aria-label="Main navigation">
+  <div class="top-nav-inner">
+    <a href="#welcome">Welcome</a>
+    <a href="#explorer">Interactive Explorer</a>
+    <a href="#dashboards">Science Dashboards</a>
+    <a href="#about">About the Project</a>
+    <a href="#library">Resource Library</a>
+  </div>
+</nav>
 
-<p>
-Interactive dashboards developed by WaterWays SEM, L3C to explore environmental
-conditions throughout the Kankakee River in Indiana.
-</p>
+<main>
+<section id="welcome" class="page-section">
+  <div class="welcome-panel">
+    <h2>Welcome to the Kankakee River Explorer</h2>
+    <p class="section-lead">This interactive platform brings together environmental measurements, habitat assessments, field observations, GPS tracks, aerial flyovers, and immersive 360-degree imagery collected during a six-day kayak inventory of approximately 74 miles of the Indiana Kankakee River in 2025.</p>
+    <div class="action-row">
+      <a class="action-button" href="#explorer" id="launchReplayWelcome">▶ Experience the 75-mile kayak expedition</a>
+      <a class="action-button secondary" href="#dashboards">Explore the science dashboards</a>
+      <a class="action-button tertiary" href="#explorer">Browse the interactive river map</a>
+    </div>
+  </div>
+</section>
 
-<h2>Available Dashboards</h2>
+<section class="page-section" aria-label="Choose an experience">
+  <div class="nav-card-grid">
+    <article class="nav-card"><h3>🛶 Experience the River</h3><p>Follow the survey downstream through the trip replay, EarthViews 360° kayak imagery, Google Earth flyovers, and mapped survey segments.</p><a href="#explorer">Launch Explorer</a></article>
+    <article class="nav-card"><h3>🧪 Explore the Science</h3><p>Open the water-quality, nutrient, habitat, and environmental-observation dashboards developed from the field inventory.</p><a href="#dashboards">View Dashboards</a></article>
+    <article class="nav-card"><h3>📖 Learn About the Project</h3><p>Review the project scope, objectives, partners, survey design, and the methods used to collect and organize the information.</p><button type="button" data-modal="projectModal">Learn More</button></article>
+    <article class="nav-card"><h3>📚 Resource Library</h3><p>Find supporting reports, maps, publications, historical materials, videos, and links to other Kankakee River information sources.</p><a href="#library">Browse Library</a></article>
+  </div>
+</section>
 
-<ul>
-<li>
-<a href="continuous-water-quality/">
-Continuous Water Quality Dashboard
-</a>
-</li>
+<section id="explorer" class="explorer-section">
+  <div class="explorer-heading">
+    <h2>Interactive River Explorer</h2>
+    <p class="section-lead">Explore all six survey segments, launch the 75-mile trip replay, view EarthViews 360° kayak imagery while a marker moves along a fixed full-route map, watch brief aerial flyovers, and turn on watershed and Indiana DNR river-mile layers.</p>
+    <div class="explorer-display-note">The Explorer opens at an 80% compact display scale so more of the map, controls, and preview can be seen at once.</div>
+  </div>
+  <div class="explorer-shell">
+<aside id="side">
+<h1>GPX Tracks and Watershed</h1>
+<div class="intro">Six survey tracks form an entry point to the Kankakee River project, now with an automated river-mile trip replay and synchronized EarthViews 360° kayak previews.</div>
+<div class="summary-grid" aria-label="Project trip summary">
+<div class="stat-card"><div class="stat-value">6</div><div class="stat-label">Survey days</div></div>
+<div class="stat-card"><div class="stat-value">73.9</div><div class="stat-label">River-mile coverage</div></div>
+<div class="stat-card"><div class="stat-value">77.1 mi</div><div class="stat-label">GPS distance traveled</div></div>
+<div class="stat-card"><div class="stat-value">37.4 hr</div><div class="stat-label">Recorded trip duration</div></div>
+<div class="stat-card"><div class="stat-value">2.06 mph</div><div class="stat-label">Overall average speed</div></div>
+<div class="stat-card"><div class="stat-value">2.20 mph</div><div class="stat-label">Estimated moving speed</div></div>
+</div>
+<div class="stats-note">Trip statistics are calculated from the full timestamped GPX tracks. River-mile coverage uses the official Indiana DNR river-mile reference file. “Moving” uses a preliminary 0.5 mph threshold and can be refined.</div>
 
-<li>
-<a href="water-quality-verbal-observations/">
-Water Quality Verbal Observations Dashboard
-</a>
-</li>
-<li>
-<a href="qhei-simple-dashboard/">
-QHEI Habitat Assessment Dashboard</a></li>
-</ul>
+<div class="replay-card">
+  <h2>75-mile trip replay</h2>
+  <div class="replay-controls">
+    <select id="replayScope" aria-label="Replay scope">
+      <option value="all">Entire survey</option>
+      <option value="0">May 7 segment</option>
+      <option value="1">May 9 segment</option>
+      <option value="2">May 30 segment</option>
+      <option value="3">May 31 segment</option>
+      <option value="4">June 2 segment</option>
+      <option value="5">June 5 segment</option>
+    </select>
+    <select id="replaySpeed" aria-label="Replay speed">
+      <option value="3500">Relaxed</option>
+      <option value="2200" selected>Normal</option>
+      <option value="1200">Fast</option>
+    </select>
+    <button id="replayPlay" type="button">▶ Play</button>
+    <button id="replayPause" type="button">Pause</button>
+    <button id="replayPrevious" type="button">← Previous</button>
+    <button id="replayNext" type="button">Next →</button>
+    <button id="replayRestart" type="button" style="grid-column:1 / -1">↺ Replay from the beginning</button>
+    <button id="earthviewsLaunch" type="button" style="grid-column:1 / -1">Open EarthViews trip preview</button>
+  </div>
+  <input id="replayProgress" class="replay-progress" type="range" min="0" max="1" value="0" step="1" aria-label="Replay position">
+  <div id="replayStatus" class="replay-status">Ready to begin at the upstream end of the survey.</div>
+  <div class="replay-note">Open the EarthViews preview first, adjust your screen if needed, and then press Play. The full route remains fixed and is positioned below the preview while the location marker advances. Playback uses a separate clean route layer with no labels or leader-line objects. The normal labels and short leader lines return afterward. Default stops occur about every two Indiana DNR river miles. EarthViews locations are synchronized from the full timestamped GPX route using the tour's 10-second image sequence. Use the full-location link if embedded display is blocked.</div>
+</div>
 
+<div class="row" id="watershed-row">
+  <input id="watershed-toggle" type="checkbox" checked>
+  <span class="swatch" style="height:12px;background:rgba(0,120,180,.22);border:2px solid #0078b4;box-sizing:border-box"></span>
+  <span>
+    <div class="name">Kankakee River watershed boundary</div>
+    <div class="meta">USGS WBD HUC-8 07120001</div>
+  </span>
+</div>
+
+<div class="row">
+  <input id="dnr-whole-toggle" type="checkbox">
+  <span class="swatch" style="height:12px;background:#fff;border:2px solid #153c52;box-sizing:border-box"></span>
+  <span><div class="name">Indiana DNR whole river miles</div><div class="meta">Official KML coordinates; off by default</div></span>
+</div>
+<div class="row">
+  <input id="dnr-tenths-toggle" type="checkbox">
+  <span class="swatch" style="height:8px;background:#64748b;border-radius:50%;margin-top:4px"></span>
+  <span><div class="name">Indiana DNR 0.1-mile points</div><div class="meta">Dense reference layer; off by default</div></span>
+</div>
+
+<div id="watershed-status" class="meta" style="margin:6px 0 10px">Loading watershed boundary…</div>
+<div id="list"></div>
+<button id="all">Show all tracks</button>
+<button id="none">Hide all tracks</button>
+<button id="fit">Zoom to all tracks</button>
+<div class="note">Use the layer control in the upper-right corner of the map to switch between road and satellite imagery. An internet connection is required for the background tiles.</div>
+</aside>
+<div id="map"></div>
+<div id="earthviewsPanel" class="hidden">
+  <div id="earthviewsHeader"><h2>EarthViews trip preview</h2><div class="preview-window-actions"><button id="earthviewsExpand" type="button">Expand</button><button id="earthviewsCollapse" type="button">Close</button></div></div>
+  <div id="earthviewsBody">
+    <div id="earthviewsMeta">Select Play or a replay stop.</div>
+    <iframe id="earthviewsFrame" title="EarthViews 360-degree kayak preview" loading="lazy"></iframe>
+    <div id="earthviewsActions">
+      <div id="earthviewsLocationCaption">River location will appear here.</div>
+      <a id="earthviewsOpen" href="#" target="_blank" rel="noopener noreferrer">Open full EarthViews location</a>
+    </div>
+    <div class="preview-resize-note">Drag the header to move this window. Drag its lower-right corner to resize.</div>
+  </div>
+</div>
+  </div>
+</section>
+
+<section class="page-section" id="about">
+  <h2>Project at a Glance</h2>
+  <p class="section-lead">The first version highlights the scope of the kayak-based inventory. Additional project metrics can be added as the Explorer grows.</p>
+  <div class="project-stats">
+    <div class="project-stat"><strong>6</strong><span>Survey days</span></div>
+    <div class="project-stat"><strong>73.9</strong><span>River miles covered</span></div>
+    <div class="project-stat"><strong>77.1 mi</strong><span>GPS distance traveled</span></div>
+    <div class="project-stat"><strong>37.4 hr</strong><span>Recorded trip time</span></div>
+    <div class="project-stat"><strong>14</strong><span>Laboratory nutrient samples</span></div>
+    <div class="project-stat"><strong>5</strong><span>Connected science dashboards</span></div>
+  </div>
+</section>
+
+<section id="dashboards" class="page-section">
+  <h2>Explore the Science Dashboards</h2>
+  <p class="section-lead">Each dashboard provides a different way to investigate conditions and observations along the surveyed river corridor.</p>
+  <div class="dashboard-grid">
+    <article class="dashboard-card live-dashboard-card" data-dashboard-url="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/observation-explorer-v15/" tabindex="0" role="link" aria-label="Open Observation Explorer Version 15 dashboard in a new tab">
+      <div class="dashboard-thumb obs">🗣</div><div class="dashboard-copy"><h3>Observation Explorer — Version 15</h3><p>Explore mapped environmental observations, categories, survey segments, dates, and representative examples collected during the kayak inventory.</p><a href="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/observation-explorer-v15/" target="_blank" rel="noopener">Open Dashboard</a></div></article>
+
+    <article class="dashboard-card live-dashboard-card" data-dashboard-url="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/continuous-water-quality/" tabindex="0" role="link" aria-label="Open Continuous Water Quality dashboard in a new tab">
+<div class="dashboard-thumb water">💧</div>
+      <div class="dashboard-copy">
+        <h3>Continuous Water Quality</h3>
+        <p>Investigate continuously recorded temperature, conductivity, turbidity, dissolved oxygen, pH, chlorophyll, nitrate, and related measurements.</p>
+        <a href="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/continuous-water-quality/" target="_blank" rel="noopener">Open Dashboard</a>
+      </div>
+</article>
+
+    <article class="dashboard-card live-dashboard-card" data-dashboard-url="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/qhei-simple-dashboard/" tabindex="0" role="link" aria-label="Open QHEI Habitat Assessment dashboard in a new tab">
+<div class="dashboard-thumb habitat">🌿</div>
+      <div class="dashboard-copy">
+        <h3>QHEI Habitat Assessment</h3>
+        <p>Explore total habitat scores, component categories, mapped assessment sites, EarthViews links, and patterns by Indiana DNR river mile.</p>
+        <a href="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/qhei-simple-dashboard/" target="_blank" rel="noopener">Open Dashboard</a>
+      </div>
+</article>
+
+    <article class="dashboard-card live-dashboard-card" data-dashboard-url="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/laboratory-nutrients/" tabindex="0" role="link" aria-label="Open Laboratory Nutrient Samples dashboard in a new tab">
+      <div class="dashboard-thumb nutrients">🧪</div><div class="dashboard-copy"><h3>Laboratory Nutrient Samples</h3><p>Explore nitrate/nitrite and phosphorus concentrations by sampling location and interpolated Indiana DNR river mile.</p><a href="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/laboratory-nutrients/" target="_blank" rel="noopener">Open Dashboard</a></div></article>
+
+    <article class="dashboard-card live-dashboard-card"
+      data-dashboard-url="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/water-quality-verbal-observations/" tabindex="0" role="link"
+      aria-label="Open Water Quality Verbal Observations dashboard in a new tab">
+      <div class="dashboard-thumb water">💬</div>
+      <div class="dashboard-copy">
+        <h3>Water Quality Verbal Observations</h3>
+        <p>Explore verbal water-quality observations, mapped locations, parameter summaries, representative records, and survey-segment patterns.</p>
+        <a href="https://dmclaughlin-wwsem.github.io/kankakee-river-condition-inventory/water-quality-verbal-observations/" target="_blank" rel="noopener">Open Dashboard</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="page-section">
+  <h2>About the Project</h2>
+  <p class="section-lead">Use these introductory summaries for a quick orientation. More detailed project documentation can be added in later versions.</p>
+  <div class="nav-card-grid">
+    <article class="nav-card"><h3>Project Scope and Objectives</h3><p>Why the inventory was conducted, what river corridor was studied, and how the Explorer supports environmental understanding and stewardship.</p><button type="button" data-modal="projectModal">View Summary</button></article>
+    <article class="nav-card"><h3>Study Methods</h3><p>Kayak-based GPS tracking, environmental observations, continuous sensors, laboratory sampling, habitat assessment, imagery, and data integration.</p><button type="button" data-modal="methodsModal">View Methods</button></article>
+    <article class="nav-card"><h3>Partners and Funding</h3><p>Pokagon Band of Potawatomi, WaterWays|SEM, L3C, survey partners, and support from the USEPA Great Lakes Restoration Initiative.</p><button type="button" data-modal="partnersModal">View Partners</button></article>
+    <article class="nav-card"><h3>Data Use and Interpretation</h3><p>Understand what the information represents, how locations are referenced, and important qualifications for public interpretation.</p><button type="button" data-modal="dataModal">Read Notes</button></article>
+  </div>
+</section>
+
+<section id="library" class="page-section">
+  <h2>Kankakee River Resource Library</h2>
+  <p class="section-lead">This section establishes the future home for supporting information and outside resources. Specific sources and links can be added next.</p>
+  <div class="library-grid">
+    <article class="library-card"><h3>Reports and Studies</h3><p>Project reports, agency studies, technical documents, and watershed assessments.</p><span class="coming-soon">Coming soon</span></article>
+    <article class="library-card"><h3>Maps and Historical Resources</h3><p>Historical maps, aerial imagery, river engineering history, and land-use information.</p><span class="coming-soon">Coming soon</span></article>
+    <article class="library-card"><h3>Publications and Websites</h3><p>Scientific publications, partner websites, educational materials, and other trusted Kankakee River sources.</p><span class="coming-soon">Coming soon</span></article>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div><strong>Kankakee River Explorer</strong><br>WaterWays-inspired Great Lakes color palette and typography</div>
+    <div>Pokagon Band of Potawatomi<br>in cooperation with WaterWays|SEM, L3C</div>
+    <div>Funding provided by the U.S. Environmental Protection Agency<br>Great Lakes Restoration Initiative</div>
+  </div>
+</footer>
+
+<div id="projectModal" class="modal-overlay"><div class="info-dialog"><button type="button" data-close-modal>Close</button><h2>Project Scope and Objectives</h2><p>The 2025 inventory documented environmental conditions along approximately 74 miles of the Indiana Kankakee River. The project combines field observations, measurements, habitat information, laboratory samples, and immersive imagery to improve understanding of the river and make the information accessible to technical and public audiences.</p><p>The Kankakee River Explorer is intended to support environmental stewardship, education, planning, future monitoring, and continued exploration of the river corridor.</p></div></div>
+<div id="methodsModal" class="modal-overlay"><div class="info-dialog"><button type="button" data-close-modal>Close</button><h2>Study Methods</h2><p>Field teams traveled the river by kayak over six survey days. The inventory incorporated timestamped GPS tracks, continuous water-quality sensor readings, laboratory nutrient samples, QHEI habitat assessments, verbal environmental observations, photographs and video, EarthViews 360° imagery, and other location-based information.</p><p>Indiana DNR river-mile reference coordinates provide a common spatial framework for relating information collected by different methods.</p></div></div>
+<div id="partnersModal" class="modal-overlay"><div class="info-dialog"><button type="button" data-close-modal>Close</button><h2>Partners and Funding</h2><p>This Explorer presents work conducted as a project of the Pokagon Band of Potawatomi in cooperation with WaterWays|SEM, L3C. Funding was provided by the U.S. Environmental Protection Agency Great Lakes Restoration Initiative.</p><p>Additional survey partners, contributors, and acknowledgments can be added as the public project description is finalized.</p></div></div>
+<div id="dataModal" class="modal-overlay"><div class="info-dialog"><button type="button" data-close-modal>Close</button><h2>Data Use and Interpretation</h2><p>The Explorer combines information collected at different spatial and temporal resolutions. EarthViews previews, aerial flyovers, GPS tracks, river-mile references, and environmental measurements should be interpreted according to the notes provided in each dashboard.</p><p>The Explorer is a communication and discovery platform and does not replace original laboratory reports, agency records, or formal technical documents.</p></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+<div id="flyoverInfoPopover" role="tooltip" aria-live="polite">
+  <strong>About this flyover</strong>
+  This 5-second Google Earth animation shows a representative location somewhere along this kayak survey segment. It is not intended to represent the exact point where the label connects to the mapped GPS track.
+</div>
+
+<div id="videoModal" role="dialog" aria-modal="true" aria-labelledby="videoTitle">
+  <div id="videoDialog">
+    <div id="videoHeader">
+      <h2 id="videoTitle">Google Earth flyover</h2>
+      <button id="videoClose" type="button" aria-label="Close video">×</button>
+    </div>
+    <video id="flyoverVideo" controls playsinline preload="metadata"></video>
+  </div>
+</div>
+
+<script>
+const officialDNRPoints=[{"rm":131.6,"lat":41.604289346,"lon":-86.424286427,"objectid":"38593"},{"rm":131.5,"lat":41.6039367720001,"lon":-86.42622005,"objectid":"38592"},{"rm":131.4,"lat":41.6036025330001,"lon":-86.428013784,"objectid":"38591"},{"rm":131.3,"lat":41.6032216770001,"lon":-86.4300238179999,"objectid":"38590"},{"rm":131.2,"lat":41.602897225,"lon":-86.431880929,"objectid":"38589"},{"rm":131.1,"lat":41.602572868,"lon":-86.433763421,"objectid":"38588"},{"rm":131.0,"lat":41.6022393220001,"lon":-86.435722176,"objectid":"38587"},{"rm":130.9,"lat":41.6019242470001,"lon":-86.437566448,"objectid":"38586"},{"rm":130.8,"lat":41.601361244,"lon":-86.4394001489999,"objectid":"38585"},{"rm":130.7,"lat":41.600252089,"lon":-86.440667035,"objectid":"38584"},{"rm":130.6,"lat":41.5991904590001,"lon":-86.441908069,"objectid":"38583"},{"rm":130.5,"lat":41.59806252,"lon":-86.4432385279999,"objectid":"38582"},{"rm":130.4,"lat":41.596962671,"lon":-86.444467106,"objectid":"38581"},{"rm":130.3,"lat":41.5959017320001,"lon":-86.445860395,"objectid":"38580"},{"rm":130.2,"lat":41.5948693130001,"lon":-86.447240697,"objectid":"38579"},{"rm":130.1,"lat":41.59421022,"lon":-86.448947945,"objectid":"38578"},{"rm":130.0,"lat":41.5935133360001,"lon":-86.4507316679999,"objectid":"38577"},{"rm":129.9,"lat":41.592892077,"lon":-86.4523877299999,"objectid":"38576"},{"rm":129.8,"lat":41.592223677,"lon":-86.4541584419999,"objectid":"38575"},{"rm":129.7,"lat":41.5913442130001,"lon":-86.45565153,"objectid":"38574"},{"rm":129.6,"lat":41.590312274,"lon":-86.457158555,"objectid":"38573"},{"rm":129.5,"lat":41.5893087310001,"lon":-86.4586272,"objectid":"38572"},{"rm":129.4,"lat":41.588409788,"lon":-86.460044137,"objectid":"38571"},{"rm":129.3,"lat":41.5876837750001,"lon":-86.46175164,"objectid":"38570"},{"rm":129.2,"lat":41.5869673880001,"lon":-86.4634844189999,"objectid":"38569"},{"rm":129.1,"lat":41.586212489,"lon":-86.465141293,"objectid":"38568"},{"rm":129.0,"lat":41.5854481540001,"lon":-86.466823601,"objectid":"38567"},{"rm":128.9,"lat":41.584482732,"lon":-86.468317067,"objectid":"38566"},{"rm":128.8,"lat":41.5833830770001,"lon":-86.46964653,"objectid":"38565"},{"rm":128.7,"lat":41.582292997,"lon":-86.4709885669999,"objectid":"38564"},{"rm":128.6,"lat":41.5811933680001,"lon":-86.472330636,"objectid":"38563"},{"rm":128.5,"lat":41.5800647190001,"lon":-86.473584024,"objectid":"38562"},{"rm":128.4,"lat":41.578936346,"lon":-86.474900845,"objectid":"38561"},{"rm":128.3,"lat":41.5777983080001,"lon":-86.476192305,"objectid":"38560"},{"rm":128.2,"lat":41.5765726770001,"lon":-86.4770908739999,"objectid":"38559"},{"rm":128.1,"lat":41.575444491,"lon":-86.478458339,"objectid":"38558"},{"rm":128.0,"lat":41.574574182,"lon":-86.479937943,"objectid":"38557"},{"rm":127.9,"lat":41.573637069,"lon":-86.481405345,"objectid":"38556"},{"rm":127.8,"lat":41.5727002780001,"lon":-86.48294887,"objectid":"38555"},{"rm":127.7,"lat":41.5717730000001,"lon":-86.484492274,"objectid":"38554"},{"rm":127.6,"lat":41.570854721,"lon":-86.485921316,"objectid":"38553"},{"rm":127.5,"lat":41.569792987,"lon":-86.4872498999999,"objectid":"38552"},{"rm":127.4,"lat":41.5687503010001,"lon":-86.48857829,"objectid":"38551"},{"rm":127.3,"lat":41.5676410400001,"lon":-86.489945241,"objectid":"38550"},{"rm":127.2,"lat":41.5665693880001,"lon":-86.49119761,"objectid":"38549"},{"rm":127.1,"lat":41.5654313860001,"lon":-86.49253931,"objectid":"38548"},{"rm":127.0,"lat":41.564378882,"lon":-86.49381683,"objectid":"38547"},{"rm":126.9,"lat":41.563326585,"lon":-86.495145078,"objectid":"38546"},{"rm":126.8,"lat":41.562245842,"lon":-86.4965115799999,"objectid":"38545"},{"rm":126.7,"lat":41.561174781,"lon":-86.497916039,"objectid":"38544"},{"rm":126.6,"lat":41.560131857,"lon":-86.4992186969999,"objectid":"38543"},{"rm":126.5,"lat":41.559031669,"lon":-86.500509063,"objectid":"38542"},{"rm":126.4,"lat":41.557970036,"lon":-86.5019006209999,"objectid":"38541"},{"rm":126.3,"lat":41.556889045,"lon":-86.503228825,"objectid":"38540"},{"rm":126.2,"lat":41.5558269950001,"lon":-86.504531459,"objectid":"38539"},{"rm":126.1,"lat":41.5547652020001,"lon":-86.505897502,"objectid":"38538"},{"rm":126.0,"lat":41.5537223490001,"lon":-86.507237974,"objectid":"38537"},{"rm":125.9,"lat":41.5526318720001,"lon":-86.508591455,"objectid":"38536"},{"rm":125.8,"lat":41.5516366480001,"lon":-86.50993148,"objectid":"38535"},{"rm":125.7,"lat":41.550536659,"lon":-86.511297633,"objectid":"38534"},{"rm":125.6,"lat":41.5492735810001,"lon":-86.512423857,"objectid":"38533"},{"rm":125.5,"lat":41.547856519,"lon":-86.513208571,"objectid":"38532"},{"rm":125.4,"lat":41.5465341880001,"lon":-86.513852957,"objectid":"38531"},{"rm":125.3,"lat":41.5452118520001,"lon":-86.5144973179999,"objectid":"38530"},{"rm":125.2,"lat":41.5439386200001,"lon":-86.5154838839999,"objectid":"38529"},{"rm":125.1,"lat":41.542847561,"lon":-86.516722827,"objectid":"38528"},{"rm":125.0,"lat":41.5417281580001,"lon":-86.518025382,"objectid":"38527"},{"rm":124.9,"lat":41.5406656690001,"lon":-86.519264027,"objectid":"38526"},{"rm":124.8,"lat":41.539574568,"lon":-86.520502845,"objectid":"38525"},{"rm":124.7,"lat":41.5384362140001,"lon":-86.52184347,"objectid":"38524"},{"rm":124.6,"lat":41.537297686,"lon":-86.523145987,"objectid":"38523"},{"rm":124.5,"lat":41.5362065960001,"lon":-86.5243973619999,"objectid":"38522"},{"rm":124.4,"lat":41.5351249180001,"lon":-86.52562325,"objectid":"38521"},{"rm":124.3,"lat":41.534043384,"lon":-86.526887158,"objectid":"38520"},{"rm":124.2,"lat":41.532760716,"lon":-86.527924126,"objectid":"38519"},{"rm":124.1,"lat":41.5313321900001,"lon":-86.5282643579999,"objectid":"38518"},{"rm":124.0,"lat":41.529952,"lon":-86.528769142,"objectid":"38517"},{"rm":123.9,"lat":41.5285432110001,"lon":-86.529274115,"objectid":"38516"},{"rm":123.8,"lat":41.5271155090001,"lon":-86.529817257,"objectid":"38515"},{"rm":123.7,"lat":41.5256591560001,"lon":-86.5303478979999,"objectid":"38514"},{"rm":123.6,"lat":41.524250409,"lon":-86.5308654849999,"objectid":"38513"},{"rm":123.5,"lat":41.5228322830001,"lon":-86.531421171,"objectid":"38512"},{"rm":123.4,"lat":41.521394829,"lon":-86.5319135509999,"objectid":"38511"},{"rm":123.3,"lat":41.520100466,"lon":-86.532430246,"objectid":"38510"},{"rm":123.2,"lat":41.518875709,"lon":-86.533656722,"objectid":"38509"},{"rm":123.1,"lat":41.518091181,"lon":-86.535311249,"objectid":"38508"},{"rm":123.0,"lat":41.5168654720001,"lon":-86.536309334,"objectid":"38507"},{"rm":122.9,"lat":41.5156586160001,"lon":-86.537256516,"objectid":"38506"},{"rm":122.8,"lat":41.514346995,"lon":-86.53822977,"objectid":"38505"},{"rm":122.7,"lat":41.5131595440001,"lon":-86.5392655209999,"objectid":"38504"},{"rm":122.6,"lat":41.5118481580001,"lon":-86.54030211,"objectid":"38503"},{"rm":122.5,"lat":41.510679296,"lon":-86.54122351,"objectid":"38502"},{"rm":122.4,"lat":41.5093585110001,"lon":-86.542298132,"objectid":"38501"},{"rm":122.3,"lat":41.5081231560001,"lon":-86.5432833359999,"objectid":"38500"},{"rm":122.2,"lat":41.506906857,"lon":-86.544268369,"objectid":"38499"},{"rm":122.1,"lat":41.5059691500001,"lon":-86.545796719,"objectid":"38498"},{"rm":122.0,"lat":41.5050118070001,"lon":-86.547185667,"objectid":"38497"},{"rm":121.9,"lat":41.5039883170001,"lon":-86.548727205,"objectid":"38496"},{"rm":121.8,"lat":41.503021307,"lon":-86.550090772,"objectid":"38495"},{"rm":121.7,"lat":41.501949273,"lon":-86.551416982,"objectid":"38494"},{"rm":121.6,"lat":41.5008484270001,"lon":-86.552692623,"objectid":"38493"},{"rm":121.5,"lat":41.4998709990001,"lon":-86.5538405729999,"objectid":"38492"},{"rm":121.4,"lat":41.4988085030001,"lon":-86.5551792699999,"objectid":"38491"},{"rm":121.3,"lat":41.497765008,"lon":-86.5565051139999,"objectid":"38490"},{"rm":121.2,"lat":41.497132811,"lon":-86.558195831,"objectid":"38489"},{"rm":121.1,"lat":41.4965487870001,"lon":-86.560025665,"objectid":"38488"},{"rm":121.0,"lat":41.4959742660001,"lon":-86.5618554,"objectid":"38487"},{"rm":120.9,"lat":41.495428169,"lon":-86.563646876,"objectid":"38486"},{"rm":120.8,"lat":41.494882235,"lon":-86.565489036,"objectid":"38485"},{"rm":120.7,"lat":41.4943075790001,"lon":-86.567305999,"objectid":"38484"},{"rm":120.6,"lat":41.4937899940001,"lon":-86.5690971929999,"objectid":"38483"},{"rm":120.5,"lat":41.4931960270001,"lon":-86.570863505,"objectid":"38482"},{"rm":120.4,"lat":41.4926594630001,"lon":-86.572692801,"objectid":"38481"},{"rm":120.3,"lat":41.4921228700001,"lon":-86.574522068,"objectid":"38480"},{"rm":120.2,"lat":41.491538443,"lon":-86.57631358,"objectid":"38479"},{"rm":120.1,"lat":41.4910017460001,"lon":-86.578130108,"objectid":"38478"},{"rm":120.0,"lat":41.4904555790001,"lon":-86.579972023,"objectid":"38477"},{"rm":119.9,"lat":41.489880785,"lon":-86.581814091,"objectid":"38476"},{"rm":119.8,"lat":41.4893343750001,"lon":-86.583605232,"objectid":"38475"},{"rm":119.7,"lat":41.488759476,"lon":-86.5854345609999,"objectid":"38474"},{"rm":119.6,"lat":41.488213009,"lon":-86.58722564,"objectid":"38473"},{"rm":119.5,"lat":41.4876760930001,"lon":-86.589029309,"objectid":"38472"},{"rm":119.4,"lat":41.487072599,"lon":-86.590884076,"objectid":"38471"},{"rm":119.3,"lat":41.4864882310001,"lon":-86.592764046,"objectid":"38470"},{"rm":119.2,"lat":41.4859511820001,"lon":-86.594554944,"objectid":"38469"},{"rm":119.1,"lat":41.485309156,"lon":-86.59632111,"objectid":"38468"},{"rm":119.0,"lat":41.4846096410001,"lon":-86.5980115309999,"objectid":"38467"},{"rm":118.9,"lat":41.4837672,"lon":-86.599728149,"objectid":"38466"},{"rm":118.8,"lat":41.4826373870001,"lon":-86.6010535,"objectid":"38465"},{"rm":118.7,"lat":41.4812484670001,"lon":-86.601886,"objectid":"38464"},{"rm":118.6,"lat":41.479964356,"lon":-86.602705148,"objectid":"38463"},{"rm":118.5,"lat":41.4786898150001,"lon":-86.603536881,"objectid":"38462"},{"rm":118.4,"lat":41.4773869310001,"lon":-86.604444809,"objectid":"38461"},{"rm":118.3,"lat":41.4760453870001,"lon":-86.605200827,"objectid":"38460"},{"rm":118.2,"lat":41.4746180860001,"lon":-86.605970009,"objectid":"38459"},{"rm":118.1,"lat":41.4732764,"lon":-86.606687939,"objectid":"38458"},{"rm":118.0,"lat":41.47198259,"lon":-86.607468925,"objectid":"38457"},{"rm":117.9,"lat":41.47063188,"lon":-86.608338943,"objectid":"38456"},{"rm":117.8,"lat":41.4693000120001,"lon":-86.609145441,"objectid":"38455"},{"rm":117.7,"lat":41.4679683100001,"lon":-86.6100026,"objectid":"38454"},{"rm":117.6,"lat":41.4666459640001,"lon":-86.610808973,"objectid":"38453"},{"rm":117.5,"lat":41.4652760320001,"lon":-86.611640945,"objectid":"38452"},{"rm":117.4,"lat":41.463944182,"lon":-86.612459981,"objectid":"38451"},{"rm":117.3,"lat":41.4625742810001,"lon":-86.613304555,"objectid":"38450"},{"rm":117.2,"lat":41.4612900400001,"lon":-86.6141105679999,"objectid":"38449"},{"rm":117.1,"lat":41.4599393600001,"lon":-86.6150056499999,"objectid":"38448"},{"rm":117.0,"lat":41.4586552750001,"lon":-86.6158622839999,"objectid":"38447"},{"rm":116.9,"lat":41.457352203,"lon":-86.616744339,"objectid":"38446"},{"rm":116.8,"lat":41.4560775530001,"lon":-86.617575506,"objectid":"38445"},{"rm":116.7,"lat":41.454736294,"lon":-86.6184450439999,"objectid":"38444"},{"rm":116.6,"lat":41.453404477,"lon":-86.6192891489999,"objectid":"38443"},{"rm":116.5,"lat":41.452091926,"lon":-86.620196462,"objectid":"38442"},{"rm":116.4,"lat":41.451009282,"lon":-86.6214445099999,"objectid":"38441"},{"rm":116.3,"lat":41.4499368210001,"lon":-86.622895187,"objectid":"38440"},{"rm":116.2,"lat":41.4490456300001,"lon":-86.6243954509999,"objectid":"38439"},{"rm":116.1,"lat":41.4478578320001,"lon":-86.6255679559999,"objectid":"38438"},{"rm":116.0,"lat":41.4466795110001,"lon":-86.626727692,"objectid":"38437"},{"rm":115.9,"lat":41.4454345730001,"lon":-86.6279257739999,"objectid":"38436"},{"rm":115.8,"lat":41.444256147,"lon":-86.629060087,"objectid":"38435"},{"rm":115.7,"lat":41.4430588070001,"lon":-86.630245142,"objectid":"38434"},{"rm":115.6,"lat":41.4418709870001,"lon":-86.6314301,"objectid":"38433"},{"rm":115.5,"lat":41.4407313030001,"lon":-86.632766768,"objectid":"38432"},{"rm":115.4,"lat":41.439677277,"lon":-86.634064901,"objectid":"38431"},{"rm":115.3,"lat":41.438594962,"lon":-86.635464499,"objectid":"38430"},{"rm":115.2,"lat":41.4375217190001,"lon":-86.636724649,"objectid":"38429"},{"rm":115.1,"lat":41.4364009990001,"lon":-86.6380483619999,"objectid":"38428"},{"rm":115.0,"lat":41.435327688,"lon":-86.63929576,"objectid":"38427"},{"rm":114.9,"lat":41.4341974050001,"lon":-86.640619435,"objectid":"38426"},{"rm":114.8,"lat":41.433067184,"lon":-86.6419683989999,"objectid":"38425"},{"rm":114.7,"lat":41.4320420830001,"lon":-86.64340541,"objectid":"38424"},{"rm":114.6,"lat":41.4310360690001,"lon":-86.644854938,"objectid":"38423"},{"rm":114.5,"lat":41.4301252870001,"lon":-86.646278572,"objectid":"38422"},{"rm":114.4,"lat":41.4291098960001,"lon":-86.6477913969999,"objectid":"38421"},{"rm":114.3,"lat":41.428151644,"lon":-86.649291201,"objectid":"38420"},{"rm":114.2,"lat":41.427136137,"lon":-86.650778601,"objectid":"38419"},{"rm":114.1,"lat":41.426168273,"lon":-86.6522657,"objectid":"38418"},{"rm":114.0,"lat":41.425171678,"lon":-86.6537149119999,"objectid":"38417"},{"rm":113.9,"lat":41.424194206,"lon":-86.655189308,"objectid":"38416"},{"rm":113.8,"lat":41.423226286,"lon":-86.6566762749999,"objectid":"38415"},{"rm":113.7,"lat":41.422239167,"lon":-86.658125302,"objectid":"38414"},{"rm":113.6,"lat":41.4212331520001,"lon":-86.659637709,"objectid":"38413"},{"rm":113.5,"lat":41.4202365360001,"lon":-86.6611120269999,"objectid":"38412"},{"rm":113.4,"lat":41.4192495450001,"lon":-86.662624244,"objectid":"38411"},{"rm":113.3,"lat":41.418281489,"lon":-86.664098324,"objectid":"38410"},{"rm":113.2,"lat":41.417351436,"lon":-86.665534172,"objectid":"38409"},{"rm":113.1,"lat":41.4163550010001,"lon":-86.6670969579999,"objectid":"38408"},{"rm":113.0,"lat":41.4153962010001,"lon":-86.668494876,"objectid":"38407"},{"rm":112.9,"lat":41.4143995430001,"lon":-86.669994253,"objectid":"38406"},{"rm":112.8,"lat":41.413622736,"lon":-86.671707757,"objectid":"38405"},{"rm":112.7,"lat":41.4133135550001,"lon":-86.6736088279999,"objectid":"38404"},{"rm":112.6,"lat":41.4129376110001,"lon":-86.675510215,"objectid":"38403"},{"rm":112.5,"lat":41.4126091950001,"lon":-86.6773733539999,"objectid":"38402"},{"rm":112.4,"lat":41.4122713200001,"lon":-86.67927451,"objectid":"38401"},{"rm":112.3,"lat":41.4118858900001,"lon":-86.681226533,"objectid":"38400"},{"rm":112.2,"lat":41.4111752960001,"lon":-86.6828128829999,"objectid":"38399"},{"rm":112.1,"lat":41.4104075880001,"lon":-86.684437466,"objectid":"38398"},{"rm":112.0,"lat":41.409573263,"lon":-86.68611298,"objectid":"38397"},{"rm":111.9,"lat":41.408796077,"lon":-86.6877755149999,"objectid":"38396"},{"rm":111.8,"lat":41.4079902,"lon":-86.6894128229999,"objectid":"38395"},{"rm":111.7,"lat":41.4072032620001,"lon":-86.691012015,"objectid":"38394"},{"rm":111.6,"lat":41.4063973720001,"lon":-86.692661905,"objectid":"38393"},{"rm":111.5,"lat":41.405620158,"lon":-86.6943496059999,"objectid":"38392"},{"rm":111.4,"lat":41.4048237850001,"lon":-86.6960120319999,"objectid":"38391"},{"rm":111.3,"lat":41.4040175900001,"lon":-86.6975731699999,"objectid":"38390"},{"rm":111.2,"lat":41.4031350760001,"lon":-86.699121959,"objectid":"38389"},{"rm":111.1,"lat":41.402195212,"lon":-86.700620326,"objectid":"38388"},{"rm":111.0,"lat":41.4008624090001,"lon":-86.701322799,"objectid":"38387"},{"rm":110.9,"lat":41.399481839,"lon":-86.70198748,"objectid":"38386"},{"rm":110.8,"lat":41.3980916990001,"lon":-86.7026395139999,"objectid":"38385"},{"rm":110.7,"lat":41.3967493170001,"lon":-86.7033292849999,"objectid":"38384"},{"rm":110.6,"lat":41.3953402660001,"lon":-86.704044649,"objectid":"38383"},{"rm":110.5,"lat":41.3939502750001,"lon":-86.7047598949999,"objectid":"38382"},{"rm":110.4,"lat":41.392569651,"lon":-86.705411772,"objectid":"38381"},{"rm":110.3,"lat":41.3911695670001,"lon":-86.705911799,"objectid":"38380"},{"rm":110.2,"lat":41.3897594000001,"lon":-86.7061966489999,"objectid":"38379"},{"rm":110.1,"lat":41.3882918400001,"lon":-86.706405793,"objectid":"38378"},{"rm":110.0,"lat":41.3867671140001,"lon":-86.706627842,"objectid":"38377"},{"rm":109.9,"lat":41.3853663460001,"lon":-86.7068619839999,"objectid":"38376"},{"rm":109.8,"lat":41.383965677,"lon":-86.7071340859999,"objectid":"38375"},{"rm":109.7,"lat":41.3824982410001,"lon":-86.7073938189999,"objectid":"38374"},{"rm":109.6,"lat":41.3811740580001,"lon":-86.7077541579999,"objectid":"38373"},{"rm":109.5,"lat":41.3797557610001,"lon":-86.708595864,"objectid":"38372"},{"rm":109.4,"lat":41.3784710800001,"lon":-86.709500222,"objectid":"38371"},{"rm":109.3,"lat":41.377138917,"lon":-86.710480694,"objectid":"38370"},{"rm":109.2,"lat":41.375863753,"lon":-86.7113849369999,"objectid":"38369"},{"rm":109.1,"lat":41.3746170860001,"lon":-86.71225105,"objectid":"38368"},{"rm":109.0,"lat":41.373380039,"lon":-86.7131550569999,"objectid":"38367"},{"rm":108.9,"lat":41.3721814630001,"lon":-86.714198068,"objectid":"38366"},{"rm":108.8,"lat":41.371021415,"lon":-86.715405394,"objectid":"38365"},{"rm":108.7,"lat":41.369832602,"lon":-86.7165495259999,"objectid":"38364"},{"rm":108.6,"lat":41.368662902,"lon":-86.717718841,"objectid":"38363"},{"rm":108.5,"lat":41.367464591,"lon":-86.718888238,"objectid":"38362"},{"rm":108.4,"lat":41.3662376400001,"lon":-86.7200450619999,"objectid":"38361"},{"rm":108.3,"lat":41.3649814020001,"lon":-86.720923576,"objectid":"38360"},{"rm":108.2,"lat":41.363658334,"lon":-86.721764381,"objectid":"38359"},{"rm":108.1,"lat":41.3623924890001,"lon":-86.722617562,"objectid":"38358"},{"rm":108.0,"lat":41.3609742290001,"lon":-86.723521967,"objectid":"38357"},{"rm":107.9,"lat":41.359554476,"lon":-86.723806342,"objectid":"38356"},{"rm":107.8,"lat":41.3581153220001,"lon":-86.7239516069999,"objectid":"38355"},{"rm":107.7,"lat":41.3566570090001,"lon":-86.724058988,"objectid":"38354"},{"rm":107.6,"lat":41.3552083210001,"lon":-86.72420428,"objectid":"38353"},{"rm":107.5,"lat":41.3537405970001,"lon":-86.724362297,"objectid":"38352"},{"rm":107.4,"lat":41.3523491670001,"lon":-86.724532637,"objectid":"38351"},{"rm":107.3,"lat":41.350883013,"lon":-86.725348503,"objectid":"38350"},{"rm":107.2,"lat":41.349626459,"lon":-86.726112851,"objectid":"38349"},{"rm":107.1,"lat":41.3483130020001,"lon":-86.727003914,"objectid":"38348"},{"rm":107.0,"lat":41.347094747,"lon":-86.7278439419999,"objectid":"38347"},{"rm":106.9,"lat":41.3457721600001,"lon":-86.7289120789999,"objectid":"38346"},{"rm":106.8,"lat":41.344601944,"lon":-86.729916292,"objectid":"38345"},{"rm":106.7,"lat":41.343393645,"lon":-86.730945924,"objectid":"38344"},{"rm":106.6,"lat":41.34210913,"lon":-86.7320011319999,"objectid":"38343"},{"rm":106.5,"lat":41.3408724170001,"lon":-86.7331193489999,"objectid":"38342"},{"rm":106.4,"lat":41.3395878530001,"lon":-86.734161823,"objectid":"38341"},{"rm":106.3,"lat":41.338360332,"lon":-86.735140782,"objectid":"38340"},{"rm":106.2,"lat":41.3369411830001,"lon":-86.7357030699999,"objectid":"38339"},{"rm":106.1,"lat":41.335560076,"lon":-86.736227237,"objectid":"38338"},{"rm":106.0,"lat":41.3342268910001,"lon":-86.73686502,"objectid":"38337"},{"rm":105.9,"lat":41.33279794,"lon":-86.737313445,"objectid":"38336"},{"rm":105.8,"lat":41.331301302,"lon":-86.737344751,"objectid":"38335"},{"rm":105.7,"lat":41.3298236160001,"lon":-86.7373253929999,"objectid":"38334"},{"rm":105.6,"lat":41.328412631,"lon":-86.737293118,"objectid":"38333"},{"rm":105.5,"lat":41.3269445340001,"lon":-86.737299015,"objectid":"38332"},{"rm":105.4,"lat":41.325544236,"lon":-86.737772558,"objectid":"38331"},{"rm":105.3,"lat":41.3242399270001,"lon":-86.738536558,"objectid":"38330"},{"rm":105.2,"lat":41.3228499000001,"lon":-86.739338806,"objectid":"38329"},{"rm":105.1,"lat":41.3215650180001,"lon":-86.740267059,"objectid":"38328"},{"rm":105.0,"lat":41.3205479920001,"lon":-86.741611518,"objectid":"38327"},{"rm":104.9,"lat":41.3195215870001,"lon":-86.7430318419999,"objectid":"38326"},{"rm":104.8,"lat":41.3184570870001,"lon":-86.74447756,"objectid":"38325"},{"rm":104.7,"lat":41.3174019350001,"lon":-86.745847327,"objectid":"38324"},{"rm":104.6,"lat":41.3164039910001,"lon":-86.747229472,"objectid":"38323"},{"rm":104.5,"lat":41.3154059770001,"lon":-86.748586286,"objectid":"38322"},{"rm":104.4,"lat":41.3144462160001,"lon":-86.750006135,"objectid":"38321"},{"rm":104.3,"lat":41.313515254,"lon":-86.7515269849999,"objectid":"38320"},{"rm":104.2,"lat":41.3125843540001,"lon":-86.753085723,"objectid":"38319"},{"rm":104.1,"lat":41.311691511,"lon":-86.754618987,"objectid":"38318"},{"rm":104.0,"lat":41.3108081,"lon":-86.756114243,"objectid":"38317"},{"rm":103.9,"lat":41.3098485100001,"lon":-86.757660314,"objectid":"38316"},{"rm":103.8,"lat":41.3089079390001,"lon":-86.7591936269999,"objectid":"38315"},{"rm":103.7,"lat":41.307967348,"lon":-86.7607268949999,"objectid":"38314"},{"rm":103.6,"lat":41.3069023100001,"lon":-86.762020359,"objectid":"38313"},{"rm":103.5,"lat":41.3056751130001,"lon":-86.7632764379999,"objectid":"38312"},{"rm":103.4,"lat":41.3044857780001,"lon":-86.7644059099999,"objectid":"38311"},{"rm":103.3,"lat":41.303296559,"lon":-86.765598551,"objectid":"38310"},{"rm":103.2,"lat":41.302116836,"lon":-86.7667784719999,"objectid":"38309"},{"rm":103.1,"lat":41.300927491,"lon":-86.7679204619999,"objectid":"38308"},{"rm":103.0,"lat":41.2998333370001,"lon":-86.768998864,"objectid":"38307"},{"rm":102.9,"lat":41.298577363,"lon":-86.7702042129999,"objectid":"38306"},{"rm":102.8,"lat":41.2973784500001,"lon":-86.771346111,"objectid":"38305"},{"rm":102.7,"lat":41.296189156,"lon":-86.772538497,"objectid":"38304"},{"rm":102.6,"lat":41.2950093600001,"lon":-86.7737181649999,"objectid":"38303"},{"rm":102.5,"lat":41.293839109,"lon":-86.774910399,"objectid":"38302"},{"rm":102.4,"lat":41.2927069030001,"lon":-86.7760645389999,"objectid":"38301"},{"rm":102.3,"lat":41.2915366020001,"lon":-86.777244049,"objectid":"38300"},{"rm":102.2,"lat":41.2903281320001,"lon":-86.778411007,"objectid":"38299"},{"rm":102.1,"lat":41.289157758,"lon":-86.779565153,"objectid":"38298"},{"rm":102.0,"lat":41.288006438,"lon":-86.780719194,"objectid":"38297"},{"rm":101.9,"lat":41.2868456690001,"lon":-86.781923782,"objectid":"38296"},{"rm":101.8,"lat":41.2856847690001,"lon":-86.783065134,"objectid":"38295"},{"rm":101.7,"lat":41.284905988,"lon":-86.784634899,"objectid":"38294"},{"rm":101.6,"lat":41.2842419150001,"lon":-86.78638119,"objectid":"38293"},{"rm":101.5,"lat":41.283568304,"lon":-86.7881401129999,"objectid":"38292"},{"rm":101.4,"lat":41.282932659,"lon":-86.789823052,"objectid":"38291"},{"rm":101.3,"lat":41.2822589040001,"lon":-86.791531355,"objectid":"38290"},{"rm":101.2,"lat":41.2816137450001,"lon":-86.79325217,"objectid":"38289"},{"rm":101.1,"lat":41.2809781380001,"lon":-86.794998197,"objectid":"38288"},{"rm":101.0,"lat":41.2802566400001,"lon":-86.796706543,"objectid":"38287"},{"rm":100.9,"lat":41.279649492,"lon":-86.798401864,"objectid":"38286"},{"rm":100.8,"lat":41.2789661410001,"lon":-86.8001479329999,"objectid":"38285"},{"rm":100.7,"lat":41.2782826110001,"lon":-86.8018055059999,"objectid":"38284"},{"rm":100.6,"lat":41.2776183600001,"lon":-86.803601997,"objectid":"38283"},{"rm":100.5,"lat":41.2769442920001,"lon":-86.8052468349999,"objectid":"38282"},{"rm":100.4,"lat":41.276279903,"lon":-86.806992706,"objectid":"38281"},{"rm":100.3,"lat":41.2756344700001,"lon":-86.8086879379999,"objectid":"38280"},{"rm":100.2,"lat":41.2749509820001,"lon":-86.8104464319999,"objectid":"38279"},{"rm":100.1,"lat":41.2742577290001,"lon":-86.812078551,"objectid":"38278"},{"rm":100.0,"lat":41.2736313890001,"lon":-86.8138368099999,"objectid":"38277"},{"rm":99.9,"lat":41.273262662,"lon":-86.8157459449999,"objectid":"38276"},{"rm":99.8,"lat":41.272922484,"lon":-86.817642345,"objectid":"38275"},{"rm":99.7,"lat":41.272601222,"lon":-86.819462855,"objectid":"38274"},{"rm":99.6,"lat":41.2722989960001,"lon":-86.821283293,"objectid":"38273"},{"rm":99.5,"lat":41.27210188,"lon":-86.823280339,"objectid":"38272"},{"rm":99.4,"lat":41.2717424910001,"lon":-86.82516408,"objectid":"38271"},{"rm":99.3,"lat":41.271392491,"lon":-86.826971961,"objectid":"38270"},{"rm":99.2,"lat":41.271185518,"lon":-86.8288173559999,"objectid":"38269"},{"rm":99.1,"lat":41.271369452,"lon":-86.830712273,"objectid":"38268"},{"rm":99.0,"lat":41.271562906,"lon":-86.832619813,"objectid":"38267"},{"rm":98.9,"lat":41.271737209,"lon":-86.834489504,"objectid":"38266"},{"rm":98.8,"lat":41.271911624,"lon":-86.836460293,"objectid":"38265"},{"rm":98.7,"lat":41.272057336,"lon":-86.83838062,"objectid":"38264"},{"rm":98.6,"lat":41.2716118480001,"lon":-86.840226579,"objectid":"38263"},{"rm":98.5,"lat":41.270536441,"lon":-86.8415685969999,"objectid":"38262"},{"rm":98.4,"lat":41.2693844070001,"lon":-86.842658045,"objectid":"38261"},{"rm":98.3,"lat":41.2683854250001,"lon":-86.844138786,"objectid":"38260"},{"rm":98.2,"lat":41.26772986,"lon":-86.845795567,"objectid":"38259"},{"rm":98.1,"lat":41.2670746210001,"lon":-86.847717653,"objectid":"38258"},{"rm":98.0,"lat":41.2666955500001,"lon":-86.8494369049999,"objectid":"38257"},{"rm":97.9,"lat":41.266421483,"lon":-86.851282249,"objectid":"38256"},{"rm":97.8,"lat":41.2661378860001,"lon":-86.85315287,"objectid":"38255"},{"rm":97.7,"lat":41.265825658,"lon":-86.855023536,"objectid":"38254"},{"rm":97.6,"lat":41.265732789,"lon":-86.856994786,"objectid":"38253"},{"rm":97.5,"lat":41.265658908,"lon":-86.8589280859999,"objectid":"38252"},{"rm":97.4,"lat":41.2656040150001,"lon":-86.860823435,"objectid":"38251"},{"rm":97.3,"lat":41.265415761,"lon":-86.862832774,"objectid":"38250"},{"rm":97.2,"lat":41.265246345,"lon":-86.86467781,"objectid":"38249"},{"rm":97.1,"lat":41.265048388,"lon":-86.866598704,"objectid":"38248"},{"rm":97.0,"lat":41.264857482,"lon":-86.868472329,"objectid":"38247"},{"rm":96.9,"lat":41.264490139,"lon":-86.87028916,"objectid":"38246"},{"rm":96.8,"lat":41.2637390040001,"lon":-86.8720721129999,"objectid":"38245"},{"rm":96.7,"lat":41.2629207890001,"lon":-86.873564565,"objectid":"38244"},{"rm":96.6,"lat":41.2617877220001,"lon":-86.874842797,"objectid":"38243"},{"rm":96.5,"lat":41.2608930280001,"lon":-86.876171073,"objectid":"38242"},{"rm":96.4,"lat":41.260017627,"lon":-86.8777266829999,"objectid":"38241"},{"rm":96.3,"lat":41.259495201,"lon":-86.8795342769999,"objectid":"38240"},{"rm":96.2,"lat":41.259020412,"lon":-86.8813417549999,"objectid":"38239"},{"rm":96.1,"lat":41.25855518,"lon":-86.883199724,"objectid":"38238"},{"rm":96.0,"lat":41.2580039910001,"lon":-86.8849314829999,"objectid":"38237"},{"rm":95.9,"lat":41.2575195850001,"lon":-86.886738899,"objectid":"38236"},{"rm":95.8,"lat":41.257016107,"lon":-86.888571586,"objectid":"38235"},{"rm":95.7,"lat":41.2565221470001,"lon":-86.8904168619999,"objectid":"38234"},{"rm":95.6,"lat":41.2559232180001,"lon":-86.892186484,"objectid":"38233"},{"rm":95.5,"lat":41.2552097120001,"lon":-86.893792032,"objectid":"38232"},{"rm":95.4,"lat":41.255068491,"lon":-86.8957377199999,"objectid":"38231"},{"rm":95.3,"lat":41.2544886260001,"lon":-86.8975956529999,"objectid":"38230"},{"rm":95.2,"lat":41.253746366,"lon":-86.899112723,"objectid":"38229"},{"rm":95.1,"lat":41.252966128,"lon":-86.900831937,"objectid":"38228"},{"rm":95.0,"lat":41.252090401,"lon":-86.9023996619999,"objectid":"38227"},{"rm":94.9,"lat":41.2513577490001,"lon":-86.904080827,"objectid":"38226"},{"rm":94.8,"lat":41.250529676,"lon":-86.905686297,"objectid":"38225"},{"rm":94.7,"lat":41.249539788,"lon":-86.907633016,"objectid":"38224"},{"rm":94.6,"lat":41.248740266,"lon":-86.909238358,"objectid":"38223"},{"rm":94.5,"lat":41.2479407600001,"lon":-86.910894188,"objectid":"38222"},{"rm":94.4,"lat":41.2471603160001,"lon":-86.912575214,"objectid":"38221"},{"rm":94.3,"lat":41.2463607700001,"lon":-86.914243594,"objectid":"38220"},{"rm":94.2,"lat":41.2457328090001,"lon":-86.915924345,"objectid":"38219"},{"rm":94.1,"lat":41.2454863660001,"lon":-86.917895098,"objectid":"38218"},{"rm":94.0,"lat":41.245230372,"lon":-86.919891109,"objectid":"38217"},{"rm":93.9,"lat":41.244316165,"lon":-86.921332133,"objectid":"38216"},{"rm":93.8,"lat":41.2432207140001,"lon":-86.922634396,"objectid":"38215"},{"rm":93.7,"lat":41.242153806,"lon":-86.923873429,"objectid":"38214"},{"rm":93.6,"lat":41.2410583170001,"lon":-86.925162976,"objectid":"38213"},{"rm":93.5,"lat":41.2399151550001,"lon":-86.9264651619999,"objectid":"38212"},{"rm":93.4,"lat":41.2388291390001,"lon":-86.927704093,"objectid":"38211"},{"rm":93.3,"lat":41.237790784,"lon":-86.928955559,"objectid":"38210"},{"rm":93.2,"lat":41.2366856730001,"lon":-86.9301944279999,"objectid":"38209"},{"rm":93.1,"lat":41.2355710470001,"lon":-86.931483782,"objectid":"38208"},{"rm":93.0,"lat":41.234494501,"lon":-86.9327099079999,"objectid":"38207"},{"rm":92.9,"lat":41.233341683,"lon":-86.933948699,"objectid":"38206"},{"rm":92.8,"lat":41.232284183,"lon":-86.9351873529999,"objectid":"38205"},{"rm":92.7,"lat":41.2311409000001,"lon":-86.936476563,"objectid":"38204"},{"rm":92.6,"lat":41.2301311160001,"lon":-86.937853997,"objectid":"38203"},{"rm":92.5,"lat":41.2293788750001,"lon":-86.93953422,"objectid":"38202"},{"rm":92.4,"lat":41.2288364010001,"lon":-86.941327867,"objectid":"38201"},{"rm":92.3,"lat":41.2283129780001,"lon":-86.943146723,"objectid":"38200"},{"rm":92.2,"lat":41.227780012,"lon":-86.945003443,"objectid":"38199"},{"rm":92.1,"lat":41.2272946530001,"lon":-86.946796953,"objectid":"38198"},{"rm":92.0,"lat":41.2267901820001,"lon":-86.948552572,"objectid":"38197"},{"rm":91.9,"lat":41.2263524680001,"lon":-86.9504217579999,"objectid":"38196"},{"rm":91.8,"lat":41.225876552,"lon":-86.952202557,"objectid":"38195"},{"rm":91.7,"lat":41.225410208,"lon":-86.9541474759999,"objectid":"38194"},{"rm":91.6,"lat":41.224867497,"lon":-86.955915641,"objectid":"38193"},{"rm":91.5,"lat":41.224191273,"lon":-86.9576333539999,"objectid":"38192"},{"rm":91.4,"lat":41.2235055030001,"lon":-86.959388917,"objectid":"38191"},{"rm":91.3,"lat":41.2228196840001,"lon":-86.961081312,"objectid":"38190"},{"rm":91.2,"lat":41.2221529120001,"lon":-86.962786287,"objectid":"38189"},{"rm":91.1,"lat":41.221409855,"lon":-86.96451652,"objectid":"38188"},{"rm":91.0,"lat":41.220590482,"lon":-86.9661709979999,"objectid":"38187"},{"rm":90.9,"lat":41.219837807,"lon":-86.967774896,"objectid":"38186"},{"rm":90.8,"lat":41.219762007,"lon":-86.9694920759999,"objectid":"38185"},{"rm":90.7,"lat":41.2203535460001,"lon":-86.9713225949999,"objectid":"38184"},{"rm":90.6,"lat":41.220754404,"lon":-86.973216356,"objectid":"38183"},{"rm":90.5,"lat":41.221155212,"lon":-86.975021757,"objectid":"38182"},{"rm":90.4,"lat":41.221527408,"lon":-86.976915574,"objectid":"38181"},{"rm":90.3,"lat":41.2224810230001,"lon":-86.978342042,"objectid":"38180"},{"rm":90.2,"lat":41.223596646,"lon":-86.97954122,"objectid":"38179"},{"rm":90.1,"lat":41.224731336,"lon":-86.9808161939999,"objectid":"38178"},{"rm":90.0,"lat":41.22582787,"lon":-86.9820280869999,"objectid":"38177"},{"rm":89.9,"lat":41.226943449,"lon":-86.983189506,"objectid":"38176"},{"rm":89.8,"lat":41.227782517,"lon":-86.984123733,"objectid":"38175"},{"rm":89.7,"lat":41.2287742520001,"lon":-86.9861818219999,"objectid":"38174"},{"rm":89.6,"lat":41.229575233,"lon":-86.987760146,"objectid":"38173"},{"rm":89.5,"lat":41.2303666660001,"lon":-86.989414278,"objectid":"38172"},{"rm":89.4,"lat":41.2311580730001,"lon":-86.991055822,"objectid":"38171"},{"rm":89.3,"lat":41.2319494590001,"lon":-86.992710035,"objectid":"38170"},{"rm":89.2,"lat":41.232750352,"lon":-86.994351658,"objectid":"38169"},{"rm":89.1,"lat":41.2335321570001,"lon":-86.9960185799999,"objectid":"38168"},{"rm":89.0,"lat":41.234342537,"lon":-86.997660282,"objectid":"38167"},{"rm":88.9,"lat":41.2351242940001,"lon":-86.9992893959999,"objectid":"38166"},{"rm":88.8,"lat":41.2357439620001,"lon":-87.0006659639999,"objectid":"38165"},{"rm":88.7,"lat":41.2365352080001,"lon":-87.0023204089999,"objectid":"38164"},{"rm":88.6,"lat":41.2373073630001,"lon":-87.00398752,"objectid":"38163"},{"rm":88.5,"lat":41.2381271630001,"lon":-87.0056041559999,"objectid":"38162"},{"rm":88.4,"lat":41.2388706740001,"lon":-87.007233457,"objectid":"38161"},{"rm":88.3,"lat":41.23967136,"lon":-87.0088754289999,"objectid":"38160"},{"rm":88.2,"lat":41.2404720280001,"lon":-87.0104416629999,"objectid":"38159"},{"rm":88.1,"lat":41.2413298800001,"lon":-87.011982684,"objectid":"38158"},{"rm":88.0,"lat":41.242206776,"lon":-87.0135237489999,"objectid":"38157"},{"rm":87.9,"lat":41.24309319,"lon":-87.015026967,"objectid":"38156"},{"rm":87.8,"lat":41.243979575,"lon":-87.016593378,"objectid":"38155"},{"rm":87.7,"lat":41.24488502,"lon":-87.0180714219999,"objectid":"38154"},{"rm":87.6,"lat":41.2458095010001,"lon":-87.0196126659999,"objectid":"38153"},{"rm":87.5,"lat":41.246705375,"lon":-87.021078158,"objectid":"38152"},{"rm":87.4,"lat":41.247658406,"lon":-87.0226700219999,"objectid":"38151"},{"rm":87.3,"lat":41.248592353,"lon":-87.0242366639999,"objectid":"38150"},{"rm":87.2,"lat":41.249469096,"lon":-87.025727538,"objectid":"38149"},{"rm":87.1,"lat":41.2504506220001,"lon":-87.0274837649999,"objectid":"38148"},{"rm":87.0,"lat":41.2513368460001,"lon":-87.029012624,"objectid":"38147"},{"rm":86.9,"lat":41.2522516550001,"lon":-87.030516274,"objectid":"38146"},{"rm":86.8,"lat":41.25314738,"lon":-87.0320199559999,"objectid":"38145"},{"rm":86.7,"lat":41.2540812170001,"lon":-87.033523698,"objectid":"38144"},{"rm":86.6,"lat":41.254948278,"lon":-87.035103244,"objectid":"38143"},{"rm":86.5,"lat":41.255939239,"lon":-87.0367208,"objectid":"38142"},{"rm":86.4,"lat":41.2567491230001,"lon":-87.03809827,"objectid":"38141"},{"rm":86.3,"lat":41.2576828370001,"lon":-87.039728516,"objectid":"38140"},{"rm":86.2,"lat":41.2585593810001,"lon":-87.041207169,"objectid":"38139"},{"rm":86.1,"lat":41.259483527,"lon":-87.04281223,"objectid":"38138"},{"rm":86.0,"lat":41.260417197,"lon":-87.044379441,"objectid":"38137"},{"rm":85.9,"lat":41.261303195,"lon":-87.045908761,"objectid":"38136"},{"rm":85.8,"lat":41.262170117,"lon":-87.0474128399999,"objectid":"38135"},{"rm":85.7,"lat":41.263065619,"lon":-87.0489169799999,"objectid":"38134"},{"rm":85.6,"lat":41.26401825,"lon":-87.0505349159999,"objectid":"38133"},{"rm":85.5,"lat":41.2649041710001,"lon":-87.0520517689999,"objectid":"38132"},{"rm":85.4,"lat":41.2658186720001,"lon":-87.053568685,"objectid":"38131"},{"rm":85.3,"lat":41.2667045590001,"lon":-87.055072985,"objectid":"38130"},{"rm":85.2,"lat":41.267638086,"lon":-87.056590002,"objectid":"38129"},{"rm":85.1,"lat":41.268542987,"lon":-87.058119672,"objectid":"38128"},{"rm":85.0,"lat":41.2694574340001,"lon":-87.059586216,"objectid":"38127"},{"rm":84.9,"lat":41.2700284810001,"lon":-87.061393644,"objectid":"38126"},{"rm":84.8,"lat":41.2705612980001,"lon":-87.0633274259999,"objectid":"38125"},{"rm":84.7,"lat":41.2710560420001,"lon":-87.065096935,"objectid":"38124"},{"rm":84.6,"lat":41.2715316850001,"lon":-87.066879086,"objectid":"38123"},{"rm":84.5,"lat":41.272045404,"lon":-87.068711848,"objectid":"38122"},{"rm":84.4,"lat":41.2724923440001,"lon":-87.07056984,"objectid":"38121"},{"rm":84.3,"lat":41.272986937,"lon":-87.0724026349999,"objectid":"38120"},{"rm":84.2,"lat":41.273471984,"lon":-87.074210175,"objectid":"38119"},{"rm":84.1,"lat":41.2739855770001,"lon":-87.076055686,"objectid":"38118"},{"rm":84.0,"lat":41.2744514820001,"lon":-87.077888532,"objectid":"38117"},{"rm":83.9,"lat":41.2749459940001,"lon":-87.079670891,"objectid":"38116"},{"rm":83.8,"lat":41.275430881,"lon":-87.081541723,"objectid":"38115"},{"rm":83.7,"lat":41.275934841,"lon":-87.083362059,"objectid":"38114"},{"rm":83.6,"lat":41.276429212,"lon":-87.0852203219999,"objectid":"38113"},{"rm":83.5,"lat":41.2769617230001,"lon":-87.0870281159999,"objectid":"38112"},{"rm":83.4,"lat":41.277398883,"lon":-87.088823172,"objectid":"38111"},{"rm":83.3,"lat":41.2778741180001,"lon":-87.0906562169999,"objectid":"38110"},{"rm":83.2,"lat":41.2783683800001,"lon":-87.092501953,"objectid":"38109"},{"rm":83.1,"lat":41.2788340330001,"lon":-87.094322399,"objectid":"38108"},{"rm":83.0,"lat":41.279337717,"lon":-87.0962313909999,"objectid":"38107"},{"rm":82.9,"lat":41.2798224210001,"lon":-87.098001369,"objectid":"38106"},{"rm":82.8,"lat":41.280278498,"lon":-87.0997713309999,"objectid":"38105"},{"rm":82.7,"lat":41.2807916020001,"lon":-87.101705696,"objectid":"38104"},{"rm":82.6,"lat":41.281295265,"lon":-87.103501061,"objectid":"38103"},{"rm":82.5,"lat":41.2817702780001,"lon":-87.1053216829999,"objectid":"38102"},{"rm":82.4,"lat":41.2822452730001,"lon":-87.107129693,"objectid":"38101"},{"rm":82.3,"lat":41.2827296890001,"lon":-87.1090262119999,"objectid":"38100"},{"rm":82.2,"lat":41.2832237170001,"lon":-87.110809031,"objectid":"38099"},{"rm":82.1,"lat":41.2836985640001,"lon":-87.112680312,"objectid":"38098"},{"rm":82.0,"lat":41.2842020040001,"lon":-87.1145263939999,"objectid":"38097"},{"rm":81.9,"lat":41.28466731,"lon":-87.116347159,"objectid":"38096"},{"rm":81.8,"lat":41.2851897720001,"lon":-87.118180692,"objectid":"38095"},{"rm":81.7,"lat":41.2856550700001,"lon":-87.119950956,"objectid":"38094"},{"rm":81.6,"lat":41.286196515,"lon":-87.1218098579999,"objectid":"38093"},{"rm":81.5,"lat":41.2862515570001,"lon":-87.123832178,"objectid":"38092"},{"rm":81.4,"lat":41.286221067,"lon":-87.1255762819999,"objectid":"38091"},{"rm":81.3,"lat":41.286180809,"lon":-87.127509948,"objectid":"38090"},{"rm":81.2,"lat":41.286140533,"lon":-87.129430973,"objectid":"38089"},{"rm":81.1,"lat":41.28611929,"lon":-87.1313520319999,"objectid":"38088"},{"rm":81.0,"lat":41.2855166780001,"lon":-87.133107606,"objectid":"38087"},{"rm":80.9,"lat":41.2848663880001,"lon":-87.13485041,"objectid":"38086"},{"rm":80.8,"lat":41.2842350330001,"lon":-87.136681688,"objectid":"38085"},{"rm":80.7,"lat":41.2836418570001,"lon":-87.1384498199999,"objectid":"38084"},{"rm":80.6,"lat":41.283010522,"lon":-87.140217838,"objectid":"38083"},{"rm":80.5,"lat":41.2823887390001,"lon":-87.141947928,"objectid":"38082"},{"rm":80.4,"lat":41.2817858870001,"lon":-87.143766494,"objectid":"38081"},{"rm":80.3,"lat":41.281135324,"lon":-87.145597556,"objectid":"38080"},{"rm":80.2,"lat":41.2805421090001,"lon":-87.147289697,"objectid":"38079"},{"rm":80.1,"lat":41.279901054,"lon":-87.149095438,"objectid":"38078"},{"rm":80.0,"lat":41.279298139,"lon":-87.150875954,"objectid":"38077"},{"rm":79.9,"lat":41.2786665290001,"lon":-87.1527069219999,"objectid":"38076"},{"rm":79.8,"lat":41.278044525,"lon":-87.154462053,"objectid":"38075"},{"rm":79.7,"lat":41.277403427,"lon":-87.156217106,"objectid":"38074"},{"rm":79.6,"lat":41.276800366,"lon":-87.158022763,"objectid":"38073"},{"rm":79.5,"lat":41.2761306670001,"lon":-87.159739767,"objectid":"38072"},{"rm":79.4,"lat":41.2755275690001,"lon":-87.161532721,"objectid":"38071"},{"rm":79.3,"lat":41.274943582,"lon":-87.163275142,"objectid":"38070"},{"rm":79.2,"lat":41.2743499250001,"lon":-87.165093327,"objectid":"38069"},{"rm":79.1,"lat":41.2737372650001,"lon":-87.1668482489999,"objectid":"38068"},{"rm":79.0,"lat":41.2731436820001,"lon":-87.168577915,"objectid":"38067"},{"rm":78.9,"lat":41.2725785600001,"lon":-87.17038344,"objectid":"38066"},{"rm":78.8,"lat":41.2719658020001,"lon":-87.1721509,"objectid":"38065"},{"rm":78.7,"lat":41.271381653,"lon":-87.173893132,"objectid":"38064"},{"rm":78.6,"lat":41.2707879060001,"lon":-87.175660578,"objectid":"38063"},{"rm":78.5,"lat":41.270165493,"lon":-87.177453187,"objectid":"38062"},{"rm":78.4,"lat":41.2695621780001,"lon":-87.179207906,"objectid":"38061"},{"rm":78.3,"lat":41.2689778440001,"lon":-87.1810005519999,"objectid":"38060"},{"rm":78.2,"lat":41.268374334,"lon":-87.1828436549999,"objectid":"38059"},{"rm":78.1,"lat":41.2677614240001,"lon":-87.1845856159999,"objectid":"38058"},{"rm":78.0,"lat":41.267234246,"lon":-87.186353056,"objectid":"38057"},{"rm":77.9,"lat":41.2666592910001,"lon":-87.1881708719999,"objectid":"38056"},{"rm":77.8,"lat":41.2661224830001,"lon":-87.189963497,"objectid":"38055"},{"rm":77.7,"lat":41.265528428,"lon":-87.19176856,"objectid":"38054"},{"rm":77.6,"lat":41.2646392570001,"lon":-87.19330739,"objectid":"38053"},{"rm":77.5,"lat":41.2635313580001,"lon":-87.194517032,"objectid":"38052"},{"rm":77.4,"lat":41.2624423620001,"lon":-87.19581513,"objectid":"38051"},{"rm":77.3,"lat":41.261305814,"lon":-87.197037236,"objectid":"38050"},{"rm":77.2,"lat":41.260207365,"lon":-87.19827205,"objectid":"38049"},{"rm":77.1,"lat":41.258984685,"lon":-87.199670681,"objectid":"38048"},{"rm":77.0,"lat":41.257876696,"lon":-87.200892745,"objectid":"38047"},{"rm":76.9,"lat":41.256759005,"lon":-87.202203169,"objectid":"38046"},{"rm":76.8,"lat":41.2556319,"lon":-87.203437722,"objectid":"38045"},{"rm":76.7,"lat":41.254476047,"lon":-87.2047479399999,"objectid":"38044"},{"rm":76.6,"lat":41.253367891,"lon":-87.206032997,"objectid":"38043"},{"rm":76.5,"lat":41.2522215640001,"lon":-87.207330519,"objectid":"38042"},{"rm":76.4,"lat":41.2511325140001,"lon":-87.208577653,"objectid":"38041"},{"rm":76.3,"lat":41.249862088,"lon":-87.209950482,"objectid":"38040"},{"rm":76.2,"lat":41.2487826350001,"lon":-87.2111470309999,"objectid":"38039"},{"rm":76.1,"lat":41.2476362040001,"lon":-87.2124696389999,"objectid":"38038"},{"rm":76.0,"lat":41.2465757680001,"lon":-87.213678799,"objectid":"38037"},{"rm":75.9,"lat":41.245419891,"lon":-87.2149381309999,"objectid":"38036"},{"rm":75.8,"lat":41.244311644,"lon":-87.216210206,"objectid":"38035"},{"rm":75.7,"lat":41.243222474,"lon":-87.2174696719999,"objectid":"38034"},{"rm":75.6,"lat":41.242162008,"lon":-87.21866604,"objectid":"38033"},{"rm":75.5,"lat":41.2410441860001,"lon":-87.2199379589999,"objectid":"38032"},{"rm":75.4,"lat":41.239926349,"lon":-87.2212098319999,"objectid":"38031"},{"rm":75.3,"lat":41.238808524,"lon":-87.222469033,"objectid":"38030"},{"rm":75.2,"lat":41.2376907330001,"lon":-87.2237029349999,"objectid":"38029"},{"rm":75.1,"lat":41.236591945,"lon":-87.224962116,"objectid":"38028"},{"rm":75.0,"lat":41.235483636,"lon":-87.226208593,"objectid":"38027"},{"rm":74.9,"lat":41.234908128,"lon":-87.227987292,"objectid":"38026"},{"rm":74.8,"lat":41.2342850270001,"lon":-87.229715278,"objectid":"38025"},{"rm":74.7,"lat":41.233671255,"lon":-87.231531664,"objectid":"38024"},{"rm":74.6,"lat":41.2330861830001,"lon":-87.2332849749999,"objectid":"38023"},{"rm":74.5,"lat":41.232481965,"lon":-87.235063444,"objectid":"38022"},{"rm":74.4,"lat":41.2318491720001,"lon":-87.2368165189999,"objectid":"38021"},{"rm":74.3,"lat":41.231283191,"lon":-87.238519292,"objectid":"38020"},{"rm":74.2,"lat":41.2306596940001,"lon":-87.240360734,"objectid":"38019"},{"rm":74.1,"lat":41.2300649000001,"lon":-87.242139106,"objectid":"38018"},{"rm":74.0,"lat":41.2294702130001,"lon":-87.2438543069999,"objectid":"38017"},{"rm":73.9,"lat":41.22884666,"lon":-87.245683018,"objectid":"38016"},{"rm":73.8,"lat":41.228242413,"lon":-87.247385492,"objectid":"38015"},{"rm":73.7,"lat":41.2276379240001,"lon":-87.249188954,"objectid":"38014"},{"rm":73.6,"lat":41.2270907710001,"lon":-87.250916837,"objectid":"38013"},{"rm":73.5,"lat":41.226476776,"lon":-87.2526823159999,"objectid":"38012"},{"rm":73.4,"lat":41.225900998,"lon":-87.2543974019999,"objectid":"38011"},{"rm":73.3,"lat":41.2252201320001,"lon":-87.256200435,"objectid":"38010"},{"rm":73.2,"lat":41.22464419,"lon":-87.2579659639999,"objectid":"38009"},{"rm":73.1,"lat":41.2240396190001,"lon":-87.2597313479999,"objectid":"38008"},{"rm":73.0,"lat":41.2234255760001,"lon":-87.261458782,"objectid":"38007"},{"rm":72.9,"lat":41.2228302840001,"lon":-87.2633125249999,"objectid":"38006"},{"rm":72.8,"lat":41.2222353110001,"lon":-87.265014718,"objectid":"38005"},{"rm":72.7,"lat":41.221611538,"lon":-87.266792521,"objectid":"38004"},{"rm":72.6,"lat":41.221016337,"lon":-87.268570407,"objectid":"38003"},{"rm":72.5,"lat":41.2203925380001,"lon":-87.270335517,"objectid":"38002"},{"rm":72.4,"lat":41.219854571,"lon":-87.2720756959999,"objectid":"38001"},{"rm":72.3,"lat":41.219221126,"lon":-87.273865954,"objectid":"38000"},{"rm":72.2,"lat":41.2185875920001,"lon":-87.275681428,"objectid":"37999"},{"rm":72.1,"lat":41.2180019080001,"lon":-87.277408689,"objectid":"37998"},{"rm":72.0,"lat":41.2173683190001,"lon":-87.279224095,"objectid":"37997"},{"rm":71.9,"lat":41.216763486,"lon":-87.280963835,"objectid":"37996"},{"rm":71.8,"lat":41.216149,"lon":-87.282741378,"objectid":"37995"},{"rm":71.7,"lat":41.2155631790001,"lon":-87.284481136,"objectid":"37994"},{"rm":71.6,"lat":41.214748693,"lon":-87.2861567429999,"objectid":"37993"},{"rm":71.5,"lat":41.2136775070001,"lon":-87.2875408089999,"objectid":"37992"},{"rm":71.4,"lat":41.2127016380001,"lon":-87.28892525,"objectid":"37991"},{"rm":71.3,"lat":41.2116495500001,"lon":-87.290284065,"objectid":"37990"},{"rm":71.2,"lat":41.2106450480001,"lon":-87.291668294,"objectid":"37989"},{"rm":71.1,"lat":41.2096021080001,"lon":-87.293165928,"objectid":"37988"},{"rm":71.0,"lat":41.20857857,"lon":-87.29452474,"objectid":"37987"},{"rm":70.9,"lat":41.2075075760001,"lon":-87.295794927,"objectid":"37986"},{"rm":70.8,"lat":41.206388803,"lon":-87.297102729,"objectid":"37985"},{"rm":70.7,"lat":41.205279551,"lon":-87.298410529,"objectid":"37984"},{"rm":70.6,"lat":41.2042749830001,"lon":-87.299781879,"objectid":"37983"},{"rm":70.5,"lat":41.203270235,"lon":-87.301216299,"objectid":"37982"},{"rm":70.4,"lat":41.2022274030001,"lon":-87.302625254,"objectid":"37981"},{"rm":70.3,"lat":41.2011940850001,"lon":-87.3040342099999,"objectid":"37980"},{"rm":70.2,"lat":41.200151184,"lon":-87.3054556989999,"objectid":"37979"},{"rm":70.1,"lat":41.199098699,"lon":-87.3068897209999,"objectid":"37978"},{"rm":70.0,"lat":41.1981034300001,"lon":-87.308311342,"objectid":"37977"},{"rm":69.9,"lat":41.197051146,"lon":-87.309656922,"objectid":"37976"},{"rm":69.8,"lat":41.1960462750001,"lon":-87.3110910349999,"objectid":"37975"},{"rm":69.7,"lat":41.195013025,"lon":-87.312436619,"objectid":"37974"},{"rm":69.6,"lat":41.1939605900001,"lon":-87.313819933,"objectid":"37973"},{"rm":69.5,"lat":41.1929462370001,"lon":-87.315216006,"objectid":"37972"},{"rm":69.4,"lat":41.1919223690001,"lon":-87.3165993699999,"objectid":"37971"},{"rm":69.3,"lat":41.1908793470001,"lon":-87.318007837,"objectid":"37970"},{"rm":69.2,"lat":41.1898649080001,"lon":-87.319416401,"objectid":"37969"},{"rm":69.1,"lat":41.1888219580001,"lon":-87.32078692,"objectid":"37968"},{"rm":69.0,"lat":41.187740859,"lon":-87.3221572099999,"objectid":"37967"},{"rm":68.9,"lat":41.1867357240001,"lon":-87.323628785,"objectid":"37966"},{"rm":68.8,"lat":41.1858449000001,"lon":-87.325126122,"objectid":"37965"},{"rm":68.7,"lat":41.185001222,"lon":-87.3268003219999,"objectid":"37964"},{"rm":68.6,"lat":41.1842531400001,"lon":-87.328374003,"objectid":"37963"},{"rm":68.5,"lat":41.183466722,"lon":-87.330010551,"objectid":"37962"},{"rm":68.4,"lat":41.1828514440001,"lon":-87.33179935,"objectid":"37961"},{"rm":68.3,"lat":41.1827411460001,"lon":-87.3336790129999,"objectid":"37960"},{"rm":68.2,"lat":41.182659088,"lon":-87.3356723799999,"objectid":"37959"},{"rm":68.1,"lat":41.1825772880001,"lon":-87.337564796,"objectid":"37958"},{"rm":68.0,"lat":41.1825143030001,"lon":-87.339533015,"objectid":"37957"},{"rm":67.9,"lat":41.182460817,"lon":-87.34150128,"objectid":"37956"},{"rm":67.8,"lat":41.182426551,"lon":-87.343406549,"objectid":"37955"},{"rm":67.7,"lat":41.182325522,"lon":-87.345311465,"objectid":"37954"},{"rm":67.6,"lat":41.182034023,"lon":-87.347139656,"objectid":"37953"},{"rm":67.5,"lat":41.181427898,"lon":-87.34896616,"objectid":"37952"},{"rm":67.4,"lat":41.1808599550001,"lon":-87.350767597,"objectid":"37951"},{"rm":67.3,"lat":41.1803112040001,"lon":-87.352518633,"objectid":"37950"},{"rm":67.2,"lat":41.179724177,"lon":-87.354307288,"objectid":"37949"},{"rm":67.1,"lat":41.179175333,"lon":-87.356070882,"objectid":"37948"},{"rm":67.0,"lat":41.1785691470001,"lon":-87.3578719879999,"objectid":"37947"},{"rm":66.9,"lat":41.1780391570001,"lon":-87.359686095,"objectid":"37946"},{"rm":66.8,"lat":41.1774330320001,"lon":-87.3614492839999,"objectid":"37945"},{"rm":66.7,"lat":41.1768934940001,"lon":-87.3632506609999,"objectid":"37944"},{"rm":66.6,"lat":41.176458552,"lon":-87.365128296,"objectid":"37943"},{"rm":66.5,"lat":41.1760522220001,"lon":-87.366993447,"objectid":"37942"},{"rm":66.4,"lat":41.175655594,"lon":-87.368795543,"objectid":"37941"},{"rm":66.3,"lat":41.175201497,"lon":-87.370672997,"objectid":"37940"},{"rm":66.2,"lat":41.174690496,"lon":-87.372449164,"objectid":"37939"},{"rm":66.1,"lat":41.1741981650001,"lon":-87.3743389649999,"objectid":"37938"},{"rm":66.0,"lat":41.1737722460001,"lon":-87.3763174379999,"objectid":"37937"},{"rm":65.9,"lat":41.1732802660001,"lon":-87.378081015,"objectid":"37936"},{"rm":65.8,"lat":41.1727691930001,"lon":-87.379844455,"objectid":"37935"},{"rm":65.7,"lat":41.1720485280001,"lon":-87.381556184,"objectid":"37934"},{"rm":65.6,"lat":41.1710239920001,"lon":-87.382900222,"objectid":"37933"},{"rm":65.5,"lat":41.169990032,"lon":-87.384206314,"objectid":"37932"},{"rm":65.4,"lat":41.1689367800001,"lon":-87.385575332,"objectid":"37931"},{"rm":65.3,"lat":41.167912281,"lon":-87.386894012,"objectid":"37930"},{"rm":65.2,"lat":41.1668972150001,"lon":-87.388237939,"objectid":"37929"},{"rm":65.1,"lat":41.1657864160001,"lon":-87.3896947969999,"objectid":"37928"},{"rm":65.0,"lat":41.164733142,"lon":-87.391051025,"objectid":"37927"},{"rm":64.9,"lat":41.1636986610001,"lon":-87.3924830139999,"objectid":"37926"},{"rm":64.8,"lat":41.1627120000001,"lon":-87.393864783,"objectid":"37925"},{"rm":64.7,"lat":41.1626765670001,"lon":-87.3958577499999,"objectid":"37924"},{"rm":64.6,"lat":41.1625937840001,"lon":-87.397749506,"objectid":"37923"},{"rm":64.5,"lat":41.1625393050001,"lon":-87.39971712,"objectid":"37922"},{"rm":64.4,"lat":41.1624848370001,"lon":-87.401672116,"objectid":"37921"},{"rm":64.3,"lat":41.1623732240001,"lon":-87.403601528,"objectid":"37920"},{"rm":64.2,"lat":41.1623569120001,"lon":-87.405531522,"objectid":"37919"},{"rm":64.1,"lat":41.1623117890001,"lon":-87.407511794,"objectid":"37918"},{"rm":64.0,"lat":41.1622667230001,"lon":-87.409466835,"objectid":"37917"},{"rm":63.9,"lat":41.162183354,"lon":-87.411459479,"objectid":"37916"},{"rm":63.8,"lat":41.1621480250001,"lon":-87.413338885,"objectid":"37915"},{"rm":63.7,"lat":41.162474837,"lon":-87.4152458039999,"objectid":"37914"},{"rm":63.6,"lat":41.163174005,"lon":-87.416991108,"objectid":"37913"},{"rm":63.5,"lat":41.1638731030001,"lon":-87.418749063,"objectid":"37912"},{"rm":63.4,"lat":41.1645722640001,"lon":-87.420481824,"objectid":"37911"},{"rm":63.3,"lat":41.1652431700001,"lon":-87.422113517,"objectid":"37910"},{"rm":63.2,"lat":41.165970787,"lon":-87.4238717649999,"objectid":"37909"},{"rm":63.1,"lat":41.1666603850001,"lon":-87.42559196,"objectid":"37908"},{"rm":63.0,"lat":41.1673690220001,"lon":-87.427312313,"objectid":"37907"},{"rm":62.9,"lat":41.168049221,"lon":-87.428982053,"objectid":"37906"},{"rm":62.8,"lat":41.1687196290001,"lon":-87.4307148459999,"objectid":"37905"},{"rm":62.7,"lat":41.1694283310001,"lon":-87.4323974599999,"objectid":"37904"},{"rm":62.6,"lat":41.1701371500001,"lon":-87.434042263,"objectid":"37903"},{"rm":62.5,"lat":41.1708453740001,"lon":-87.435838495,"objectid":"37902"},{"rm":62.4,"lat":41.171516013,"lon":-87.437483114,"objectid":"37901"},{"rm":62.3,"lat":41.1721768040001,"lon":-87.4392034049999,"objectid":"37900"},{"rm":62.2,"lat":41.1728662670001,"lon":-87.440898687,"objectid":"37899"},{"rm":62.1,"lat":41.1734503550001,"lon":-87.442719467,"objectid":"37898"},{"rm":62.0,"lat":41.173987088,"lon":-87.444451637,"objectid":"37897"},{"rm":61.9,"lat":41.17433235,"lon":-87.446384415,"objectid":"37896"},{"rm":61.8,"lat":41.1741438700001,"lon":-87.44827572,"objectid":"37895"},{"rm":61.7,"lat":41.1735363440001,"lon":-87.450050593,"objectid":"37894"},{"rm":61.6,"lat":41.1729100200001,"lon":-87.4517496029999,"objectid":"37893"},{"rm":61.5,"lat":41.1722641590001,"lon":-87.453561996,"objectid":"37892"},{"rm":61.4,"lat":41.171608985,"lon":-87.455311205,"objectid":"37891"},{"rm":61.3,"lat":41.170954185,"lon":-87.456959449,"objectid":"37890"},{"rm":61.2,"lat":41.1705182740001,"lon":-87.4586975029999,"objectid":"37889"},{"rm":61.1,"lat":41.1705292830001,"lon":-87.460716227,"objectid":"37888"},{"rm":61.0,"lat":41.1705025300001,"lon":-87.462633752,"objectid":"37887"},{"rm":60.9,"lat":41.1704187500001,"lon":-87.4645004079999,"objectid":"37886"},{"rm":60.8,"lat":41.1703725620001,"lon":-87.4664934899999,"objectid":"37885"},{"rm":60.7,"lat":41.1702981500001,"lon":-87.4683854369999,"objectid":"37884"},{"rm":60.6,"lat":41.1702329820001,"lon":-87.470340527,"objectid":"37883"},{"rm":60.5,"lat":41.170186847,"lon":-87.472295751,"objectid":"37882"},{"rm":60.4,"lat":41.1701600060001,"lon":-87.474188028,"objectid":"37881"},{"rm":60.3,"lat":41.170056711,"lon":-87.4761176,"objectid":"37880"},{"rm":60.2,"lat":41.1700584070001,"lon":-87.47801008,"objectid":"37879"},{"rm":60.1,"lat":41.1699644240001,"lon":-87.479977559,"objectid":"37878"},{"rm":60.0,"lat":41.1699370870001,"lon":-87.481958139,"objectid":"37877"},{"rm":59.9,"lat":41.16984309,"lon":-87.4839129919999,"objectid":"37876"},{"rm":59.8,"lat":41.1697686050001,"lon":-87.485754437,"objectid":"37875"},{"rm":59.7,"lat":41.1695887450001,"lon":-87.487708643,"objectid":"37874"},{"rm":59.6,"lat":41.1693802,"lon":-87.489675242,"objectid":"37873"},{"rm":59.5,"lat":41.1692100220001,"lon":-87.491579034,"objectid":"37872"},{"rm":59.4,"lat":41.169039867,"lon":-87.4934701989999,"objectid":"37871"},{"rm":59.3,"lat":41.168841082,"lon":-87.4953611399999,"objectid":"37870"},{"rm":59.2,"lat":41.1686803440001,"lon":-87.4972649709999,"objectid":"37869"},{"rm":59.1,"lat":41.1685002350001,"lon":-87.499231728,"objectid":"37868"},{"rm":59.0,"lat":41.1683681970001,"lon":-87.501097911,"objectid":"37867"},{"rm":58.9,"lat":41.1682067570001,"lon":-87.5031404869999,"objectid":"37866"},{"rm":58.8,"lat":41.1679793810001,"lon":-87.504993305,"objectid":"37865"},{"rm":58.7,"lat":41.1678087280001,"lon":-87.5069474759999,"objectid":"37864"},{"rm":58.6,"lat":41.1676479660001,"lon":-87.508813403,"objectid":"37863"},{"rm":58.5,"lat":41.167486894,"lon":-87.510742396,"objectid":"37862"},{"rm":58.4,"lat":41.1672971350001,"lon":-87.5126837729999,"objectid":"37861"},{"rm":58.3,"lat":41.1671362800001,"lon":-87.514549668,"objectid":"37860"},{"rm":58.2,"lat":41.1669559320001,"lon":-87.516503713,"objectid":"37859"},{"rm":58.1,"lat":41.1667851990001,"lon":-87.518432591,"objectid":"37858"},{"rm":58.0,"lat":41.1666144330001,"lon":-87.520361458,"objectid":"37857"},{"rm":57.9,"lat":41.166443863,"lon":-87.522239855,"objectid":"37856"},{"rm":57.8,"lat":41.1662731490001,"lon":-87.5241434719999,"objectid":"37855"},{"rm":57.7,"lat":41.1660924660001,"lon":-87.526135309,"objectid":"37854"},{"rm":57.6,"lat":41.1653603930001,"lon":-87.5277820869999,"objectid":"37853"},{"rm":57.5,"lat":41.1639765950001,"lon":-87.528098982,"objectid":"37852"},{"rm":57.4,"lat":41.1630014470001,"lon":-87.5266151879999,"objectid":"37851"},{"rm":57.3,"lat":41.161708639,"lon":-87.5257974899999,"objectid":"37850"},{"rm":57.2,"lat":41.160455541,"lon":-87.526720955,"objectid":"37849"},{"rm":57.1,"lat":41.160208778,"lon":-87.5285607019999,"objectid":"37848"},{"rm":57.0,"lat":41.161328987,"lon":-87.5295914979999,"objectid":"37847"}];
+const replayStops=[{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":131.6,"lat":41.604221,"lon":-86.4242419,"elapsedHours":0,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#12","image":12,"section":"kankakee-river-20250507d","trackDistanceToRMm":8.5},{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":131.6,"lat":41.604221,"lon":-86.4242419,"elapsedHours":0.29,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#117","image":117,"section":"kankakee-river-20250507d","trackDistanceToRMm":8.5},{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":130.0,"lat":41.5934759,"lon":-86.4507034,"elapsedHours":1.58,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#581","image":581,"section":"kankakee-river-20250507d","trackDistanceToRMm":4.8},{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":128.0,"lat":41.5745794,"lon":-86.4799426,"elapsedHours":2.44,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#889","image":889,"section":"kankakee-river-20250507d","trackDistanceToRMm":0.7},{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":126.0,"lat":41.5537512,"lon":-86.5072552,"elapsedHours":3.45,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#1255","image":1255,"section":"kankakee-river-20250507d","trackDistanceToRMm":3.5},{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":124.0,"lat":41.5299751,"lon":-86.5288507,"elapsedHours":4.38,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#1590","image":1590,"section":"kankakee-river-20250507d","trackDistanceToRMm":7.3},{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":122.0,"lat":41.5049851,"lon":-86.5471595,"elapsedHours":5.44,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#1970","image":1970,"section":"kankakee-river-20250507d","trackDistanceToRMm":3.7},{"segmentIndex":0,"segment":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","riverMile":120.0,"lat":41.49058,"lon":-86.5800645,"elapsedHours":6.33,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250507d#2291","image":2291,"section":"kankakee-river-20250507d","trackDistanceToRMm":15.8},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":119.9,"lat":41.4900101,"lon":-86.5818763,"elapsedHours":0.23,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#126","image":126,"section":"kankakee-river-20250509d","trackDistanceToRMm":15.3},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":118.0,"lat":41.4720237,"lon":-86.607573,"elapsedHours":1.18,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#467","image":467,"section":"kankakee-river-20250509d","trackDistanceToRMm":9.8},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":116.0,"lat":41.4467602,"lon":-86.6268451,"elapsedHours":2.18,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#825","image":825,"section":"kankakee-river-20250509d","trackDistanceToRMm":13.3},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":114.0,"lat":41.425218,"lon":-86.6537695,"elapsedHours":3.14,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1171","image":1171,"section":"kankakee-river-20250509d","trackDistanceToRMm":6.9},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":112.0,"lat":41.4096283,"lon":-86.6862228,"elapsedHours":4.09,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1516","image":1516,"section":"kankakee-river-20250509d","trackDistanceToRMm":11.0},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":110.0,"lat":41.3867759,"lon":-86.706714,"elapsedHours":5.14,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1892","image":1892,"section":"kankakee-river-20250509d","trackDistanceToRMm":7.2},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":108.0,"lat":41.3609749,"lon":-86.7235303,"elapsedHours":6.21,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2278","image":2278,"section":"kankakee-river-20250509d","trackDistanceToRMm":0.7},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":106.0,"lat":41.3341903,"lon":-86.7367195,"elapsedHours":7.26,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2655","image":2655,"section":"kankakee-river-20250509d","trackDistanceToRMm":12.8},{"segmentIndex":1,"segment":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","riverMile":104.7,"lat":41.3173907,"lon":-86.7458342,"elapsedHours":7.81,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2855","image":2855,"section":"kankakee-river-20250509d","trackDistanceToRMm":1.7},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":104.7,"lat":41.3173933,"lon":-86.7458945,"elapsedHours":0.07,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#51","image":51,"section":"kankakee-river-20250530d","trackDistanceToRMm":4.1},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":104.0,"lat":41.3107407,"lon":-86.7559875,"elapsedHours":0.51,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#209","image":209,"section":"kankakee-river-20250530d","trackDistanceToRMm":13.0},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":102.0,"lat":41.2878308,"lon":-86.7805307,"elapsedHours":1.54,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#583","image":583,"section":"kankakee-river-20250530d","trackDistanceToRMm":25.1},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":100.0,"lat":41.2735607,"lon":-86.8138034,"elapsedHours":2.57,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#952","image":952,"section":"kankakee-river-20250530d","trackDistanceToRMm":8.3},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":98.0,"lat":41.2668207,"lon":-86.8495162,"elapsedHours":3.61,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#1325","image":1325,"section":"kankakee-river-20250530d","trackDistanceToRMm":15.4},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":96.0,"lat":41.2579018,"lon":-86.884889,"elapsedHours":4.66,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#1705","image":1705,"section":"kankakee-river-20250530d","trackDistanceToRMm":11.9},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":94.0,"lat":41.2451815,"lon":-86.9198654,"elapsedHours":5.69,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#2076","image":2076,"section":"kankakee-river-20250530d","trackDistanceToRMm":5.8},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":92.0,"lat":41.2268727,"lon":-86.9486031,"elapsedHours":6.6,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#2404","image":2404,"section":"kankakee-river-20250530d","trackDistanceToRMm":10.1},{"segmentIndex":2,"segment":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","riverMile":90.8,"lat":41.2199566,"lon":-86.9690163,"elapsedHours":7.03,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250530d#2540","image":2559,"section":"kankakee-river-20250530d","trackDistanceToRMm":45.3},{"segmentIndex":3,"segment":"Dunns Bridge to Baums Bridge Rd - May 31, 2025","date":"May 31, 2025","riverMile":90.8,"lat":41.2198892,"lon":-86.9695072,"elapsedHours":0.03,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250531d#13","image":13,"section":"kankakee-river-20250531d","trackDistanceToRMm":14.2},{"segmentIndex":3,"segment":"Dunns Bridge to Baums Bridge Rd - May 31, 2025","date":"May 31, 2025","riverMile":90.0,"lat":41.2258637,"lon":-86.9819586,"elapsedHours":0.47,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250531d#172","image":172,"section":"kankakee-river-20250531d","trackDistanceToRMm":7.0},{"segmentIndex":3,"segment":"Dunns Bridge to Baums Bridge Rd - May 31, 2025","date":"May 31, 2025","riverMile":88.0,"lat":41.2422833,"lon":-87.0134487,"elapsedHours":1.44,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250531d#520","image":520,"section":"kankakee-river-20250531d","trackDistanceToRMm":10.6},{"segmentIndex":3,"segment":"Dunns Bridge to Baums Bridge Rd - May 31, 2025","date":"May 31, 2025","riverMile":86.0,"lat":41.260418,"lon":-87.0443782,"elapsedHours":2.53,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250531d#913","image":913,"section":"kankakee-river-20250531d","trackDistanceToRMm":0.1},{"segmentIndex":3,"segment":"Dunns Bridge to Baums Bridge Rd - May 31, 2025","date":"May 31, 2025","riverMile":84.2,"lat":41.2731982,"lon":-87.073552,"elapsedHours":3.37,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250531d#1214","image":1214,"section":"kankakee-river-20250531d","trackDistanceToRMm":62.9},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":84.2,"lat":41.2733639,"lon":-87.0742483,"elapsedHours":0.03,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#12","image":12,"section":"kankakee-river-20250602d","trackDistanceToRMm":12.4},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":84.0,"lat":41.274243,"lon":-87.0779356,"elapsedHours":0.19,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#67","image":67,"section":"kankakee-river-20250602d","trackDistanceToRMm":23.5},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":82.0,"lat":41.2841713,"lon":-87.1145477,"elapsedHours":1.16,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#418","image":418,"section":"kankakee-river-20250602d","trackDistanceToRMm":3.8},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":80.0,"lat":41.2792701,"lon":-87.1508399,"elapsedHours":2.19,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#787","image":787,"section":"kankakee-river-20250602d","trackDistanceToRMm":4.3},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":78.0,"lat":41.2671681,"lon":-87.1862982,"elapsedHours":3.11,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#1119","image":1119,"section":"kankakee-river-20250602d","trackDistanceToRMm":8.7},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":76.0,"lat":41.2465103,"lon":-87.2135502,"elapsedHours":4.09,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#1472","image":1472,"section":"kankakee-river-20250602d","trackDistanceToRMm":13.0},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":74.0,"lat":41.2294736,"lon":-87.2438522,"elapsedHours":5.12,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#1843","image":1843,"section":"kankakee-river-20250602d","trackDistanceToRMm":0.4},{"segmentIndex":4,"segment":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","riverMile":72.3,"lat":41.2193724,"lon":-87.2734742,"elapsedHours":5.83,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250602d#2100","image":2100,"section":"kankakee-river-20250602d","trackDistanceToRMm":36.8},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":72.2,"lat":41.2185796,"lon":-87.2761522,"elapsedHours":0.0,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#0","image":0,"section":"kankakee-river-20250605d","trackDistanceToRMm":39.4},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":72.0,"lat":41.2174833,"lon":-87.2792818,"elapsedHours":0.09,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#34","image":34,"section":"kankakee-river-20250605d","trackDistanceToRMm":13.7},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":70.0,"lat":41.1981703,"lon":-87.3084506,"elapsedHours":0.95,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#341","image":341,"section":"kankakee-river-20250605d","trackDistanceToRMm":13.8},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":68.0,"lat":41.182705,"lon":-87.3395419,"elapsedHours":1.86,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#671","image":671,"section":"kankakee-river-20250605d","trackDistanceToRMm":21.2},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":66.0,"lat":41.1736659,"lon":-87.37629,"elapsedHours":2.72,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#981","image":981,"section":"kankakee-river-20250605d","trackDistanceToRMm":12.0},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":64.0,"lat":41.1622098,"lon":-87.4094645,"elapsedHours":3.63,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#1307","image":1307,"section":"kankakee-river-20250605d","trackDistanceToRMm":6.3},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":62.0,"lat":41.1738048,"lon":-87.4445544,"elapsedHours":4.69,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#1690","image":1690,"section":"kankakee-river-20250605d","trackDistanceToRMm":22.0},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":60.0,"lat":41.169931,"lon":-87.4819576,"elapsedHours":5.76,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#2073","image":2073,"section":"kankakee-river-20250605d","trackDistanceToRMm":0.7},{"segmentIndex":5,"segment":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","riverMile":58.0,"lat":41.1666474,"lon":-87.5203788,"elapsedHours":6.66,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250605d#2398","image":2398,"section":"kankakee-river-20250605d","trackDistanceToRMm":3.9}];
+const tracks=[{"name":"Jazinski to Kingsbury - May 7, 2025","original_points":22911,"display_points":225,"segments":[[[41.606047,-86.414187],[41.605773,-86.415596],[41.605692,-86.416205],[41.605589,-86.416565],[41.605188,-86.419059],[41.604959,-86.420091],[41.604809,-86.421182],[41.604475,-86.422737],[41.604385,-86.423404],[41.604198,-86.424315],[41.603848,-86.426787],[41.60367,-86.427615],[41.602587,-86.433705],[41.602489,-86.434193],[41.602437,-86.434251],[41.602484,-86.434236],[41.602474,-86.434134],[41.602509,-86.434158],[41.602465,-86.434115],[41.602482,-86.43415],[41.602517,-86.434092],[41.60253,-86.43413],[41.602435,-86.434211],[41.602471,-86.434259],[41.602414,-86.434665],[41.601916,-86.437231],[41.601834,-86.437957],[41.601616,-86.43908],[41.601486,-86.43931],[41.601017,-86.439706],[41.60088,-86.43997],[41.599886,-86.440952],[41.598934,-86.442018],[41.597134,-86.444197],[41.596859,-86.444476],[41.596348,-86.445239],[41.59537,-86.446498],[41.594706,-86.447439],[41.594099,-86.44904],[41.594166,-86.449018],[41.594043,-86.448925],[41.594107,-86.448985],[41.594082,-86.448972],[41.594048,-86.449235],[41.593966,-86.449364],[41.593949,-86.44954],[41.593883,-86.449631],[41.592861,-86.452287],[41.592109,-86.45445],[41.589611,-86.457967],[41.588542,-86.459576],[41.588298,-86.460133],[41.588219,-86.460451],[41.588074,-86.460655],[41.587077,-86.462992],[41.586751,-86.463561],[41.586554,-86.464219],[41.585786,-86.465931],[41.585448,-86.466534],[41.585151,-86.467303],[41.584981,-86.467575],[41.582297,-86.470737],[41.581319,-86.471978],[41.581198,-86.472193],[41.579968,-86.473669],[41.579636,-86.473986],[41.578942,-86.474826],[41.578735,-86.475199],[41.577967,-86.476088],[41.577609,-86.476445],[41.576851,-86.47691],[41.576013,-86.477547],[41.575699,-86.477866],[41.575379,-86.478631],[41.574897,-86.479369],[41.574523,-86.480057],[41.573908,-86.480893],[41.573674,-86.481293],[41.573695,-86.481374],[41.573638,-86.481527],[41.573315,-86.481934],[41.572351,-86.483641],[41.570503,-86.486578],[41.569578,-86.487639],[41.566715,-86.491161],[41.565853,-86.492102],[41.565396,-86.49288],[41.564814,-86.493449],[41.56421,-86.494288],[41.561107,-86.498041],[41.559874,-86.499621],[41.559495,-86.499998],[41.558875,-86.500813],[41.557742,-86.502117],[41.557274,-86.502752],[41.556668,-86.503449],[41.555504,-86.504973],[41.555315,-86.505317],[41.5553,-86.505411],[41.555385,-86.505377],[41.555387,-86.505421],[41.555207,-86.505473],[41.554986,-86.50565],[41.554515,-86.50624],[41.554422,-86.506472],[41.554105,-86.50668],[41.554023,-86.506863],[41.553913,-86.506974],[41.553946,-86.507077],[41.553774,-86.507211],[41.553499,-86.507535],[41.55331,-86.50783],[41.552542,-86.508771],[41.552085,-86.509443],[41.551449,-86.510184],[41.551088,-86.510715],[41.550269,-86.511717],[41.550167,-86.511717],[41.550123,-86.511845],[41.549786,-86.51215],[41.549263,-86.512412],[41.548689,-86.512791],[41.547217,-86.513461],[41.544721,-86.514751],[41.544519,-86.5149],[41.544186,-86.515245],[41.543079,-86.516601],[41.542738,-86.51692],[41.542261,-86.517548],[41.54212,-86.51763],[41.541548,-86.518184],[41.540941,-86.519132],[41.539896,-86.520247],[41.539518,-86.520757],[41.538018,-86.522532],[41.537485,-86.523081],[41.537208,-86.523197],[41.537105,-86.523335],[41.536941,-86.523726],[41.536332,-86.524378],[41.535988,-86.524863],[41.53479,-86.52628],[41.533312,-86.527721],[41.533197,-86.52775],[41.533507,-86.527574],[41.533455,-86.527708],[41.533475,-86.527817],[41.533522,-86.527832],[41.533305,-86.527731],[41.53291,-86.527791],[41.531932,-86.528168],[41.530375,-86.528671],[41.52991,-86.528875],[41.529765,-86.528821],[41.528746,-86.529153],[41.52846,-86.529378],[41.528212,-86.529399],[41.527639,-86.529625],[41.527155,-86.529714],[41.52665,-86.529991],[41.526484,-86.530133],[41.525662,-86.530482],[41.523311,-86.531327],[41.522909,-86.531417],[41.520207,-86.532489],[41.519666,-86.532855],[41.519024,-86.533576],[41.518925,-86.533579],[41.518864,-86.533399],[41.518827,-86.533472],[41.519024,-86.5336],[41.519046,-86.533686],[41.518915,-86.533742],[41.518541,-86.534187],[41.518557,-86.534464],[41.518487,-86.534817],[41.518343,-86.535119],[41.518024,-86.535529],[41.515808,-86.537041],[41.515458,-86.537343],[41.515161,-86.537697],[41.514538,-86.538228],[41.513949,-86.538621],[41.512675,-86.539711],[41.511823,-86.54032],[41.510776,-86.541211],[41.509935,-86.541853],[41.509578,-86.542041],[41.508804,-86.54277],[41.507536,-86.543719],[41.506751,-86.544468],[41.506531,-86.544784],[41.50588,-86.545945],[41.505111,-86.546959],[41.504769,-86.547564],[41.504016,-86.54869],[41.503763,-86.548987],[41.503357,-86.549653],[41.501462,-86.552037],[41.501152,-86.552482],[41.49789,-86.556483],[41.497428,-86.557699],[41.497388,-86.558241],[41.497056,-86.559399],[41.496968,-86.55959],[41.496623,-86.560774],[41.496519,-86.560987],[41.496114,-86.562207],[41.495891,-86.563104],[41.495474,-86.564356],[41.494884,-86.566349],[41.494595,-86.56708],[41.494276,-86.568296],[41.493707,-86.569826],[41.493527,-86.570612],[41.492764,-86.573048],[41.492514,-86.573435],[41.492486,-86.573809],[41.492324,-86.574449],[41.492214,-86.574811],[41.492078,-86.575074],[41.491938,-86.575713],[41.491111,-86.578492],[41.49096,-86.578848],[41.490313,-86.580877]]]},{"name":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","original_points":27868,"display_points":326,"segments":[[[41.490208,-86.581579],[41.490122,-86.581561],[41.490137,-86.58149],[41.490058,-86.581543],[41.490081,-86.581515],[41.490049,-86.581734],[41.489788,-86.582714],[41.489124,-86.584705],[41.488213,-86.587791],[41.486948,-86.591849],[41.486827,-86.592124],[41.486748,-86.592565],[41.4862,-86.594314],[41.485632,-86.595705],[41.485459,-86.595924],[41.485399,-86.596376],[41.485216,-86.596846],[41.485053,-86.597123],[41.484627,-86.598115],[41.484473,-86.598228],[41.48443,-86.598723],[41.484313,-86.598975],[41.484082,-86.599261],[41.483502,-86.600463],[41.483248,-86.600808],[41.482762,-86.601177],[41.482453,-86.601212],[41.482045,-86.601445],[41.480613,-86.6024],[41.479799,-86.602841],[41.479393,-86.603199],[41.478292,-86.603825],[41.477808,-86.604177],[41.477497,-86.604338],[41.477418,-86.604309],[41.477345,-86.6044],[41.476705,-86.604818],[41.473492,-86.606562],[41.472648,-86.607093],[41.471913,-86.607649],[41.471624,-86.607777],[41.470425,-86.60862],[41.469901,-86.608898],[41.468751,-86.609651],[41.467319,-86.610418],[41.466484,-86.610959],[41.466162,-86.61107],[41.465839,-86.611357],[41.464686,-86.612053],[41.463034,-86.613196],[41.462575,-86.61343],[41.462224,-86.613702],[41.461679,-86.61397],[41.461146,-86.61437],[41.460629,-86.614559],[41.460267,-86.61497],[41.458537,-86.616052],[41.458294,-86.616122],[41.458135,-86.61632],[41.457486,-86.616681],[41.457033,-86.617078],[41.455204,-86.61833],[41.454584,-86.618722],[41.454095,-86.61894],[41.45376,-86.619323],[41.453034,-86.619753],[41.452362,-86.62007],[41.451653,-86.620876],[41.450992,-86.621884],[41.450664,-86.622212],[41.44954,-86.623944],[41.449058,-86.624558],[41.449078,-86.624611],[41.448004,-86.625654],[41.447201,-86.626294],[41.446684,-86.626934],[41.446348,-86.627102],[41.446011,-86.627572],[41.444541,-86.628958],[41.442015,-86.631538],[41.441686,-86.631738],[41.441342,-86.632236],[41.440677,-86.632992],[41.439734,-86.634371],[41.439611,-86.634642],[41.438527,-86.635992],[41.437961,-86.636629],[41.437668,-86.636846],[41.437389,-86.637323],[41.43649,-86.638299],[41.436302,-86.638567],[41.436311,-86.638621],[41.436357,-86.638614],[41.436345,-86.638676],[41.436313,-86.63864],[41.436338,-86.638627],[41.436165,-86.638746],[41.435709,-86.639206],[41.435574,-86.639436],[41.435384,-86.639607],[41.435025,-86.640091],[41.433727,-86.641571],[41.432798,-86.642547],[41.432583,-86.642709],[41.432109,-86.64339],[41.431943,-86.643563],[41.431249,-86.644763],[41.43048,-86.645848],[41.428114,-86.649556],[41.425986,-86.652736],[41.425754,-86.653033],[41.425587,-86.653167],[41.425199,-86.653798],[41.425122,-86.654091],[41.424791,-86.654493],[41.423851,-86.656016],[41.420318,-86.66131],[41.42044,-86.661245],[41.420217,-86.661391],[41.420061,-86.661749],[41.419821,-86.662143],[41.419338,-86.662544],[41.419176,-86.662989],[41.418686,-86.663788],[41.417833,-86.665079],[41.417377,-86.665527],[41.417147,-86.666082],[41.416486,-86.667131],[41.415877,-86.667907],[41.414705,-86.669828],[41.413915,-86.670967],[41.413786,-86.670965],[41.413833,-86.670803],[41.413875,-86.670875],[41.41387,-86.671008],[41.413711,-86.671532],[41.413553,-86.672779],[41.413284,-86.674092],[41.412771,-86.677035],[41.412621,-86.67751],[41.412566,-86.678155],[41.412335,-86.679681],[41.412134,-86.680658],[41.411717,-86.682027],[41.41135,-86.682827],[41.410181,-86.685098],[41.40975,-86.686197],[41.409641,-86.686211],[41.409561,-86.686344],[41.409308,-86.687056],[41.408888,-86.687939],[41.408846,-86.688049],[41.408873,-86.688094],[41.40877,-86.68818],[41.408755,-86.688294],[41.408367,-86.689085],[41.407953,-86.689723],[41.407784,-86.690196],[41.40706,-86.691821],[41.406743,-86.692372],[41.406249,-86.693506],[41.405392,-86.695222],[41.405039,-86.696029],[41.404676,-86.696525],[41.404503,-86.697137],[41.404288,-86.697563],[41.403826,-86.698396],[41.40297,-86.699728],[41.402201,-86.700731],[41.402048,-86.700863],[41.401926,-86.700836],[41.401945,-86.70088],[41.401928,-86.700833],[41.401944,-86.700875],[41.401962,-86.700843],[41.401929,-86.700928],[41.401991,-86.701016],[41.402123,-86.70102],[41.40214,-86.700992],[41.402074,-86.700957],[41.401646,-86.701222],[41.400862,-86.701572],[41.400365,-86.701632],[41.399976,-86.70185],[41.399518,-86.702234],[41.399119,-86.702471],[41.397755,-86.702979],[41.396703,-86.703572],[41.396327,-86.703715],[41.393126,-86.705273],[41.391129,-86.706107],[41.390742,-86.706162],[41.389455,-86.706111],[41.388999,-86.706282],[41.387544,-86.706519],[41.385922,-86.70692],[41.385674,-86.706893],[41.38489,-86.706973],[41.383786,-86.707307],[41.383093,-86.707594],[41.38251,-86.70766],[41.381961,-86.70779],[41.381128,-86.708049],[41.380858,-86.708084],[41.380345,-86.708296],[41.379054,-86.709369],[41.377236,-86.710448],[41.376616,-86.71098],[41.376261,-86.711131],[41.375852,-86.711477],[41.374852,-86.712065],[41.374162,-86.712649],[41.373198,-86.713269],[41.37307,-86.713446],[41.372688,-86.713761],[41.372477,-86.714041],[41.371964,-86.71445],[41.371293,-86.715218],[41.370022,-86.716497],[41.369509,-86.716921],[41.368809,-86.71774],[41.368226,-86.71821],[41.367506,-86.718957],[41.366919,-86.719423],[41.366659,-86.719747],[41.365954,-86.720454],[41.365313,-86.720868],[41.365021,-86.721122],[41.364573,-86.721303],[41.362395,-86.72263],[41.362206,-86.722843],[41.362213,-86.722896],[41.362229,-86.722868],[41.362118,-86.722876],[41.361756,-86.723051],[41.361234,-86.723341],[41.360597,-86.723791],[41.360078,-86.724065],[41.360095,-86.724199],[41.360508,-86.724405],[41.360356,-86.7244],[41.360289,-86.724314],[41.360179,-86.724287],[41.360013,-86.724099],[41.359807,-86.724024],[41.358976,-86.724019],[41.358385,-86.724098],[41.358052,-86.724054],[41.35802,-86.723934],[41.358199,-86.723667],[41.357976,-86.724012],[41.357685,-86.724196],[41.357449,-86.724254],[41.356523,-86.724307],[41.355833,-86.724166],[41.355342,-86.724411],[41.354481,-86.72445],[41.353955,-86.724509],[41.353752,-86.724579],[41.352388,-86.724674],[41.351801,-86.724947],[41.351304,-86.725306],[41.34996,-86.726081],[41.348997,-86.726713],[41.348263,-86.727027],[41.347492,-86.727481],[41.346891,-86.727994],[41.346883,-86.728061],[41.346697,-86.728126],[41.346468,-86.728392],[41.345141,-86.729517],[41.34458,-86.729737],[41.34422,-86.730263],[41.34345,-86.730914],[41.342678,-86.731335],[41.342337,-86.73159],[41.342373,-86.731381],[41.342407,-86.731367],[41.342354,-86.731629],[41.342214,-86.731816],[41.341847,-86.7322],[41.341598,-86.732233],[41.341583,-86.732356],[41.341666,-86.732475],[41.341554,-86.732501],[41.341224,-86.732799],[41.340903,-86.732991],[41.338935,-86.73469],[41.337792,-86.735374],[41.335508,-86.736271],[41.335089,-86.736314],[41.33491,-86.736399],[41.334843,-86.736501],[41.334704,-86.736479],[41.333936,-86.736851],[41.332608,-86.737337],[41.329415,-86.737309],[41.329094,-86.737108],[41.328958,-86.73708],[41.328659,-86.737203],[41.328378,-86.737244],[41.327411,-86.737261],[41.32692,-86.737191],[41.326329,-86.73742],[41.326197,-86.73744],[41.326037,-86.737389],[41.325783,-86.737454],[41.325227,-86.738008],[41.325062,-86.738088],[41.324692,-86.73815],[41.324379,-86.73849],[41.324025,-86.738721],[41.323232,-86.739155],[41.322494,-86.739488],[41.321861,-86.739891],[41.321607,-86.740112],[41.321248,-86.740571],[41.320209,-86.742101],[41.319495,-86.743036],[41.319302,-86.74319],[41.318914,-86.743812],[41.318729,-86.744002],[41.318357,-86.744241],[41.318239,-86.744697],[41.31809,-86.744965],[41.317344,-86.745913]]]},{"name":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","original_points":25209,"display_points":351,"segments":[[[41.317577,-86.745897],[41.317426,-86.745936],[41.317399,-86.745924],[41.317423,-86.745899],[41.317354,-86.745901],[41.317132,-86.746102],[41.316348,-86.747012],[41.315555,-86.748296],[41.315311,-86.748409],[41.314947,-86.748897],[41.313442,-86.751363],[41.313149,-86.752052],[41.312988,-86.752079],[41.313001,-86.75221],[41.312323,-86.753297],[41.312077,-86.753853],[41.311778,-86.75422],[41.311299,-86.755104],[41.310982,-86.755487],[41.31096,-86.755462],[41.310997,-86.755547],[41.310983,-86.755667],[41.310835,-86.755901],[41.310602,-86.756142],[41.310215,-86.756741],[41.310151,-86.756963],[41.308764,-86.759329],[41.308416,-86.759764],[41.307609,-86.761056],[41.306858,-86.761744],[41.306657,-86.762057],[41.306173,-86.762396],[41.305872,-86.76281],[41.305554,-86.763091],[41.30543,-86.763288],[41.305161,-86.763487],[41.305189,-86.763472],[41.305018,-86.763679],[41.304174,-86.764448],[41.303515,-86.764993],[41.303218,-86.765293],[41.302889,-86.765739],[41.301771,-86.76674],[41.301585,-86.767083],[41.301191,-86.767347],[41.300868,-86.767629],[41.300502,-86.76805],[41.300228,-86.768256],[41.29988,-86.76872],[41.299569,-86.768961],[41.299339,-86.769337],[41.298826,-86.769654],[41.298324,-86.77037],[41.297967,-86.770695],[41.297267,-86.77146],[41.297155,-86.771465],[41.296997,-86.771565],[41.296601,-86.771971],[41.296028,-86.772441],[41.295667,-86.77286],[41.295384,-86.773081],[41.295187,-86.773353],[41.292928,-86.775464],[41.292526,-86.776045],[41.292029,-86.776361],[41.290933,-86.777435],[41.29076,-86.777782],[41.290304,-86.778049],[41.290062,-86.778442],[41.28905,-86.779314],[41.288097,-86.780342],[41.287852,-86.780485],[41.287258,-86.781173],[41.285857,-86.78246],[41.285587,-86.782755],[41.285334,-86.783203],[41.284697,-86.784872],[41.284013,-86.786472],[41.283904,-86.787075],[41.283673,-86.787364],[41.28311,-86.788734],[41.282981,-86.789282],[41.282295,-86.790982],[41.281936,-86.792152],[41.28187,-86.792223],[41.281787,-86.792221],[41.281727,-86.792366],[41.281522,-86.793082],[41.281199,-86.793839],[41.281093,-86.794314],[41.280659,-86.795343],[41.280448,-86.795605],[41.280023,-86.796947],[41.279111,-86.799191],[41.27889,-86.799943],[41.27866,-86.800332],[41.278337,-86.801112],[41.278251,-86.801485],[41.277967,-86.80213],[41.277937,-86.802432],[41.277818,-86.80278],[41.277285,-86.803909],[41.2772,-86.804357],[41.276958,-86.80477],[41.276665,-86.805565],[41.276458,-86.805925],[41.276106,-86.806945],[41.275789,-86.807614],[41.27562,-86.808447],[41.274907,-86.809954],[41.274535,-86.811122],[41.274195,-86.811961],[41.27416,-86.812157],[41.273843,-86.812771],[41.273719,-86.813125],[41.27345,-86.814283],[41.273304,-86.815116],[41.273316,-86.81522],[41.273412,-86.815332],[41.273363,-86.815521],[41.27322,-86.815744],[41.273132,-86.81644],[41.272987,-86.816981],[41.272887,-86.817566],[41.272848,-86.817891],[41.272919,-86.818187],[41.272648,-86.818925],[41.272376,-86.820842],[41.272356,-86.82145],[41.272159,-86.8221],[41.272068,-86.822228],[41.272006,-86.822216],[41.272089,-86.822263],[41.272118,-86.822431],[41.271893,-86.823993],[41.271675,-86.82488],[41.271684,-86.824943],[41.271737,-86.824934],[41.271415,-86.825387],[41.271453,-86.82538],[41.271463,-86.825484],[41.271589,-86.825751],[41.27159,-86.825964],[41.271462,-86.827301],[41.271288,-86.827902],[41.271224,-86.828288],[41.271248,-86.828599],[41.271203,-86.828887],[41.271421,-86.830509],[41.27139,-86.830946],[41.271523,-86.831886],[41.271547,-86.833089],[41.27172,-86.834083],[41.271678,-86.834258],[41.271771,-86.835729],[41.271939,-86.836705],[41.271932,-86.837059],[41.272083,-86.83889],[41.272068,-86.839367],[41.271846,-86.84014],[41.271645,-86.840433],[41.271463,-86.840484],[41.271098,-86.840842],[41.27069,-86.841802],[41.270438,-86.842118],[41.26913,-86.842855],[41.26899,-86.842972],[41.268692,-86.843375],[41.268415,-86.843957],[41.268031,-86.845155],[41.267268,-86.846821],[41.267085,-86.847462],[41.266946,-86.848406],[41.266894,-86.849355],[41.266613,-86.850205],[41.266563,-86.850621],[41.266508,-86.850716],[41.266473,-86.851695],[41.266284,-86.852967],[41.266303,-86.852945],[41.266328,-86.853051],[41.266242,-86.85317],[41.266174,-86.853443],[41.266212,-86.853503],[41.266324,-86.853461],[41.2663,-86.853443],[41.266206,-86.85372],[41.266088,-86.854354],[41.265898,-86.854832],[41.265769,-86.855381],[41.265693,-86.856012],[41.265719,-86.857019],[41.265688,-86.857539],[41.265726,-86.857886],[41.26565,-86.859138],[41.265661,-86.859879],[41.265582,-86.860643],[41.265571,-86.861282],[41.265373,-86.862665],[41.265424,-86.863889],[41.265306,-86.864439],[41.26528,-86.864936],[41.265119,-86.865861],[41.265103,-86.866549],[41.264953,-86.8682],[41.264975,-86.868716],[41.264848,-86.869124],[41.264832,-86.869503],[41.264735,-86.869845],[41.264616,-86.870164],[41.263767,-86.871473],[41.263636,-86.871924],[41.262873,-86.873624],[41.262393,-86.874296],[41.262053,-86.874497],[41.2607,-86.876075],[41.260282,-86.87666],[41.260148,-86.877002],[41.259849,-86.877511],[41.259654,-86.878165],[41.259494,-86.879411],[41.259028,-86.880881],[41.258785,-86.882443],[41.258686,-86.882471],[41.258627,-86.882554],[41.258272,-86.883531],[41.258151,-86.884033],[41.258165,-86.884127],[41.257911,-86.884857],[41.257645,-86.885983],[41.257084,-86.887951],[41.25705,-86.88817],[41.2571,-86.888503],[41.257139,-86.888582],[41.257331,-86.888688],[41.257144,-86.888384],[41.257031,-86.888337],[41.257053,-86.88821],[41.256998,-86.888612],[41.256775,-86.88952],[41.256374,-86.890614],[41.256306,-86.891072],[41.255699,-86.892388],[41.255131,-86.893303],[41.255046,-86.893516],[41.254969,-86.893837],[41.254993,-86.894448],[41.254932,-86.895401],[41.254424,-86.897722],[41.254039,-86.898162],[41.253441,-86.899313],[41.253221,-86.899879],[41.252843,-86.900557],[41.252472,-86.90154],[41.251955,-86.902441],[41.251096,-86.904124],[41.250498,-86.905727],[41.250291,-86.90643],[41.249869,-86.906955],[41.24875,-86.908973],[41.248114,-86.910583],[41.247533,-86.91163],[41.247334,-86.911898],[41.246974,-86.9129],[41.246423,-86.913937],[41.246296,-86.914361],[41.245914,-86.915083],[41.245649,-86.915856],[41.245708,-86.916961],[41.245601,-86.917343],[41.245341,-86.918676],[41.24529,-86.918779],[41.245302,-86.919129],[41.245163,-86.920027],[41.244966,-86.920572],[41.244485,-86.921174],[41.24441,-86.921325],[41.244041,-86.921602],[41.24378,-86.921931],[41.24325,-86.922432],[41.243029,-86.922762],[41.24152,-86.924489],[41.240793,-86.925252],[41.240359,-86.925781],[41.240328,-86.92591],[41.240431,-86.925846],[41.239916,-86.926302],[41.238755,-86.927611],[41.238281,-86.928229],[41.237883,-86.928448],[41.237612,-86.928679],[41.236837,-86.929885],[41.236341,-86.930453],[41.236114,-86.930624],[41.235412,-86.93161],[41.235155,-86.93176],[41.234982,-86.931943],[41.234346,-86.932828],[41.233842,-86.933309],[41.233422,-86.933928],[41.23331,-86.933987],[41.233287,-86.933934],[41.233154,-86.934191],[41.232257,-86.935058],[41.231955,-86.935474],[41.231973,-86.935549],[41.231944,-86.935563],[41.232025,-86.935568],[41.231933,-86.935764],[41.231643,-86.936122],[41.231572,-86.936137],[41.231562,-86.936192],[41.231505,-86.936152],[41.23157,-86.936098],[41.231527,-86.936101],[41.231207,-86.936311],[41.230746,-86.936891],[41.230501,-86.937282],[41.229532,-86.939196],[41.229207,-86.939974],[41.229044,-86.940486],[41.228557,-86.942384],[41.22845,-86.942665],[41.228258,-86.943531],[41.227832,-86.944933],[41.227728,-86.94552],[41.227689,-86.94629],[41.227354,-86.946985],[41.227266,-86.9474],[41.227124,-86.947728],[41.226711,-86.949104],[41.226511,-86.95011],[41.226064,-86.951698],[41.225743,-86.953197],[41.225523,-86.95399],[41.224969,-86.955671],[41.224431,-86.956814],[41.22416,-86.957777],[41.223884,-86.958366],[41.22321,-86.960054],[41.222928,-86.960641],[41.222749,-86.961553],[41.222193,-86.962436],[41.222014,-86.963159],[41.221412,-86.964779],[41.220132,-86.967339],[41.219884,-86.968183],[41.219853,-86.968423],[41.219849,-86.968677],[41.219952,-86.969004],[41.220002,-86.969008]]]},{"name":"Dunns Bridge to Baums Bridge Rd - May 31, 2025","original_points":12214,"display_points":186,"segments":[[[41.219949,-86.969003],[41.21998,-86.969034],[41.219898,-86.96936],[41.219893,-86.969571],[41.219931,-86.969678],[41.219991,-86.969695],[41.219941,-86.969697],[41.220085,-86.970425],[41.220524,-86.972122],[41.220617,-86.972832],[41.220716,-86.973254],[41.220797,-86.973578],[41.220918,-86.973813],[41.221013,-86.974136],[41.221189,-86.97582],[41.221284,-86.976233],[41.221539,-86.976912],[41.221953,-86.977427],[41.222158,-86.977988],[41.222341,-86.978255],[41.222863,-86.978655],[41.223216,-86.979116],[41.223827,-86.97971],[41.224216,-86.979976],[41.224589,-86.980632],[41.224918,-86.981018],[41.225065,-86.981278],[41.22556,-86.981616],[41.225913,-86.982011],[41.226293,-86.982532],[41.226805,-86.983004],[41.227476,-86.983794],[41.227716,-86.983974],[41.228058,-86.984493],[41.229038,-86.986684],[41.229159,-86.98707],[41.229391,-86.987499],[41.229704,-86.987933],[41.229861,-86.988436],[41.230517,-86.989761],[41.230862,-86.990237],[41.230949,-86.990616],[41.231218,-86.991151],[41.231394,-86.99175],[41.232335,-86.993528],[41.232786,-86.994576],[41.233017,-86.99493],[41.233205,-86.995377],[41.233516,-86.995887],[41.23373,-86.996339],[41.23374,-86.9965],[41.233859,-86.996827],[41.23397,-86.997034],[41.23419,-86.997276],[41.234395,-86.997731],[41.234484,-86.998131],[41.234954,-86.998958],[41.235325,-86.999735],[41.236074,-87.001509],[41.236445,-87.002172],[41.236629,-87.002699],[41.236926,-87.00317],[41.237517,-87.004422],[41.237964,-87.005084],[41.238682,-87.006749],[41.239398,-87.008047],[41.240356,-87.010214],[41.24119,-87.011606],[41.241608,-87.012141],[41.241812,-87.012544],[41.242004,-87.013081],[41.242238,-87.013358],[41.242407,-87.013688],[41.242675,-87.014056],[41.243676,-87.015966],[41.244184,-87.016765],[41.244405,-87.017257],[41.244716,-87.017782],[41.245457,-87.018931],[41.246146,-87.020229],[41.246355,-87.020547],[41.246748,-87.02081],[41.246896,-87.020966],[41.247156,-87.021755],[41.247551,-87.022659],[41.247749,-87.022887],[41.247826,-87.023082],[41.248449,-87.024084],[41.248787,-87.024546],[41.248841,-87.024888],[41.248791,-87.024979],[41.248698,-87.024988],[41.248726,-87.025048],[41.249033,-87.024971],[41.249208,-87.025117],[41.249563,-87.025912],[41.250352,-87.027252],[41.250697,-87.027688],[41.250823,-87.027771],[41.250871,-87.027937],[41.251242,-87.028535],[41.251329,-87.02883],[41.251544,-87.029114],[41.251865,-87.029847],[41.253806,-87.033095],[41.254701,-87.034848],[41.255131,-87.035372],[41.255501,-87.036177],[41.255911,-87.036834],[41.256079,-87.037188],[41.256292,-87.037389],[41.256631,-87.03785],[41.256685,-87.038111],[41.256888,-87.038501],[41.257375,-87.039183],[41.257777,-87.040034],[41.258082,-87.040425],[41.258447,-87.041042],[41.258496,-87.041158],[41.258498,-87.041318],[41.259274,-87.04272],[41.259421,-87.04292],[41.259588,-87.043055],[41.259571,-87.043093],[41.259701,-87.043139],[41.259895,-87.043309],[41.260182,-87.043709],[41.260231,-87.043915],[41.260391,-87.043929],[41.260406,-87.043759],[41.260345,-87.043883],[41.260445,-87.044467],[41.260679,-87.04501],[41.261078,-87.045741],[41.26165,-87.04668],[41.262235,-87.047533],[41.262848,-87.048748],[41.263404,-87.04958],[41.264272,-87.051258],[41.264508,-87.051513],[41.264642,-87.051933],[41.264904,-87.052271],[41.265164,-87.05271],[41.265873,-87.053359],[41.266013,-87.053852],[41.266248,-87.054287],[41.266243,-87.054382],[41.266321,-87.054259],[41.266336,-87.054135],[41.266386,-87.054144],[41.266473,-87.054392],[41.266568,-87.054979],[41.266792,-87.055499],[41.267251,-87.056172],[41.267496,-87.05643],[41.267701,-87.056791],[41.267842,-87.057152],[41.268065,-87.057474],[41.268166,-87.057729],[41.268692,-87.058414],[41.268805,-87.058772],[41.26905,-87.059145],[41.269242,-87.059593],[41.269503,-87.059959],[41.269528,-87.060182],[41.269909,-87.061538],[41.270146,-87.062881],[41.270349,-87.06349],[41.270613,-87.063839],[41.270653,-87.064402],[41.270843,-87.065335],[41.271082,-87.066228],[41.271253,-87.066706],[41.271572,-87.067864],[41.271968,-87.068611],[41.272007,-87.069499],[41.272485,-87.071697],[41.272754,-87.072565],[41.273002,-87.07311],[41.273102,-87.073433],[41.273195,-87.073555],[41.273219,-87.073331],[41.273262,-87.073346],[41.273235,-87.073316],[41.27322,-87.073369],[41.273352,-87.073436]]]},{"name":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","original_points":21005,"display_points":258,"segments":[[[41.273179,-87.07342],[41.273189,-87.073633],[41.273305,-87.073773],[41.273383,-87.074346],[41.273606,-87.075247],[41.273679,-87.075348],[41.273777,-87.075355],[41.273807,-87.075409],[41.273776,-87.075494],[41.273731,-87.075502],[41.273705,-87.075643],[41.273766,-87.076069],[41.273918,-87.076363],[41.274138,-87.077022],[41.274216,-87.077398],[41.274245,-87.077954],[41.274386,-87.078427],[41.274415,-87.078811],[41.274657,-87.079458],[41.274793,-87.080068],[41.274979,-87.080716],[41.275162,-87.081187],[41.275232,-87.081514],[41.275384,-87.081844],[41.275561,-87.083099],[41.276133,-87.08494],[41.276215,-87.085505],[41.27658,-87.086429],[41.27663,-87.086813],[41.276834,-87.087494],[41.277155,-87.089118],[41.277584,-87.090582],[41.277792,-87.091108],[41.278122,-87.092394],[41.278381,-87.093642],[41.278588,-87.094187],[41.278817,-87.095356],[41.279075,-87.095802],[41.279233,-87.096331],[41.27927,-87.096483],[41.279245,-87.096601],[41.27914,-87.09641],[41.279162,-87.096318],[41.279456,-87.09775],[41.279653,-87.098389],[41.279634,-87.098488],[41.279585,-87.098386],[41.279787,-87.098654],[41.280039,-87.099473],[41.28039,-87.101],[41.280519,-87.101378],[41.280557,-87.10184],[41.280842,-87.102702],[41.281142,-87.10324],[41.281189,-87.103527],[41.281195,-87.10421],[41.281376,-87.104762],[41.281462,-87.105314],[41.281964,-87.106834],[41.282094,-87.107587],[41.282334,-87.108336],[41.282597,-87.109678],[41.282841,-87.110385],[41.283085,-87.110789],[41.283121,-87.111161],[41.28331,-87.111986],[41.284171,-87.114548],[41.284156,-87.114959],[41.28446,-87.11597],[41.284571,-87.116732],[41.28494,-87.118161],[41.285154,-87.118851],[41.285448,-87.119576],[41.285554,-87.120323],[41.286177,-87.122548],[41.286249,-87.123261],[41.286101,-87.124717],[41.286112,-87.125794],[41.286201,-87.126613],[41.286176,-87.127317],[41.286205,-87.12791],[41.286125,-87.128498],[41.286346,-87.12937],[41.286327,-87.129578],[41.286164,-87.130194],[41.286119,-87.131479],[41.285784,-87.132293],[41.285525,-87.132661],[41.285511,-87.132835],[41.285212,-87.133584],[41.284942,-87.134546],[41.284812,-87.135264],[41.284572,-87.135883],[41.284029,-87.13696],[41.283753,-87.137981],[41.28336,-87.138753],[41.283084,-87.13976],[41.282671,-87.140912],[41.282648,-87.141209],[41.282453,-87.141552],[41.281692,-87.143556],[41.281402,-87.144394],[41.281144,-87.145398],[41.280368,-87.147221],[41.280191,-87.148396],[41.279769,-87.149544],[41.279476,-87.150551],[41.279195,-87.150973],[41.279088,-87.151429],[41.278668,-87.152718],[41.27835,-87.153474],[41.278178,-87.153711],[41.278101,-87.154065],[41.277776,-87.15492],[41.277585,-87.155802],[41.277381,-87.156356],[41.277168,-87.157143],[41.276371,-87.159054],[41.275802,-87.160768],[41.275161,-87.162411],[41.275056,-87.16273],[41.275009,-87.163307],[41.274814,-87.163678],[41.274658,-87.163809],[41.274503,-87.164237],[41.27451,-87.164552],[41.274087,-87.165449],[41.273926,-87.166086],[41.273764,-87.167142],[41.273676,-87.167458],[41.273095,-87.168429],[41.272583,-87.169718],[41.272371,-87.170412],[41.272087,-87.171591],[41.27143,-87.173176],[41.270899,-87.174859],[41.270433,-87.176076],[41.26997,-87.177558],[41.269908,-87.177902],[41.268674,-87.181129],[41.268273,-87.182682],[41.267673,-87.184527],[41.267595,-87.185122],[41.267519,-87.185411],[41.266428,-87.18823],[41.266359,-87.188744],[41.266225,-87.189172],[41.266317,-87.189677],[41.265781,-87.19044],[41.265626,-87.190748],[41.265423,-87.191525],[41.26507,-87.192584],[41.264747,-87.193121],[41.264151,-87.193624],[41.263817,-87.19406],[41.263547,-87.194246],[41.26278,-87.195202],[41.262358,-87.195504],[41.262166,-87.195753],[41.261725,-87.196598],[41.26114,-87.196985],[41.260815,-87.19732],[41.260652,-87.19742],[41.260311,-87.197818],[41.260176,-87.198102],[41.259645,-87.198679],[41.259162,-87.199316],[41.258758,-87.199734],[41.258571,-87.200048],[41.25777,-87.200852],[41.257295,-87.201442],[41.256486,-87.202186],[41.255955,-87.202791],[41.255686,-87.203267],[41.255335,-87.204121],[41.255113,-87.204326],[41.254923,-87.20459],[41.254039,-87.205106],[41.25378,-87.205329],[41.2491,-87.2105],[41.248405,-87.211395],[41.248018,-87.211737],[41.247577,-87.21222],[41.247264,-87.212686],[41.246663,-87.213431],[41.246039,-87.214026],[41.245621,-87.214552],[41.244806,-87.216048],[41.244157,-87.216423],[41.243618,-87.216836],[41.243023,-87.21746],[41.242503,-87.21815],[41.242014,-87.218676],[41.241782,-87.219054],[41.241422,-87.219512],[41.240317,-87.220636],[41.240112,-87.220905],[41.239889,-87.221025],[41.239447,-87.221558],[41.239317,-87.221805],[41.238838,-87.222312],[41.238631,-87.222629],[41.23731,-87.224234],[41.237037,-87.224502],[41.236506,-87.22484],[41.235551,-87.226043],[41.235384,-87.225952],[41.235359,-87.225773],[41.235392,-87.226191],[41.235312,-87.226515],[41.235227,-87.227293],[41.235015,-87.228223],[41.234159,-87.230379],[41.233488,-87.232413],[41.232933,-87.233875],[41.232751,-87.234557],[41.232142,-87.235876],[41.231875,-87.236918],[41.231685,-87.237571],[41.231499,-87.238016],[41.231423,-87.238387],[41.230842,-87.240001],[41.230551,-87.240608],[41.230383,-87.241108],[41.230067,-87.242219],[41.230024,-87.242591],[41.229951,-87.242843],[41.229642,-87.243415],[41.229481,-87.243828],[41.229354,-87.244532],[41.229172,-87.244961],[41.228908,-87.245942],[41.228307,-87.247082],[41.227967,-87.248465],[41.227556,-87.249312],[41.227113,-87.250621],[41.227016,-87.251114],[41.226794,-87.251804],[41.226554,-87.253174],[41.225936,-87.254251],[41.225411,-87.255498],[41.225224,-87.256326],[41.224286,-87.259276],[41.223948,-87.260151],[41.223791,-87.260413],[41.223728,-87.260677],[41.223374,-87.26158],[41.223219,-87.262094],[41.223066,-87.262862],[41.222842,-87.263579],[41.222564,-87.264251],[41.221886,-87.266239],[41.221337,-87.267374],[41.220885,-87.268868],[41.220559,-87.269669],[41.220234,-87.27084],[41.219583,-87.27257],[41.219372,-87.273474]]]},{"name":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","original_points":24658,"display_points":355,"segments":[[[41.21858,-87.276152],[41.218396,-87.276812],[41.218057,-87.277401],[41.217274,-87.27992],[41.21695,-87.280351],[41.21654,-87.281568],[41.216243,-87.282293],[41.216134,-87.282688],[41.215967,-87.283047],[41.215739,-87.283775],[41.21576,-87.284439],[41.215644,-87.285085],[41.215257,-87.285524],[41.214713,-87.286317],[41.214393,-87.286604],[41.213856,-87.287281],[41.212966,-87.288492],[41.212464,-87.289273],[41.211615,-87.290411],[41.211407,-87.290857],[41.211035,-87.291251],[41.210035,-87.292817],[41.209565,-87.293374],[41.208766,-87.29459],[41.208549,-87.294794],[41.207935,-87.295583],[41.207688,-87.295982],[41.20701,-87.296569],[41.206032,-87.29787],[41.20543,-87.298514],[41.205168,-87.299073],[41.204979,-87.299371],[41.204063,-87.300327],[41.20362,-87.301017],[41.20326,-87.301418],[41.202649,-87.302306],[41.202196,-87.302848],[41.201544,-87.303761],[41.20125,-87.304632],[41.200394,-87.305324],[41.199977,-87.305959],[41.199676,-87.306257],[41.199086,-87.307037],[41.198273,-87.308343],[41.197782,-87.308843],[41.196976,-87.309985],[41.196176,-87.311458],[41.195853,-87.311944],[41.195645,-87.312192],[41.195213,-87.312439],[41.194886,-87.312693],[41.194149,-87.313925],[41.193841,-87.314156],[41.193761,-87.314284],[41.193041,-87.315],[41.192317,-87.316099],[41.191848,-87.317148],[41.191596,-87.31752],[41.191339,-87.317788],[41.191184,-87.318225],[41.191048,-87.318435],[41.190915,-87.318557],[41.190299,-87.318905],[41.190031,-87.319184],[41.189299,-87.320168],[41.189014,-87.320619],[41.188518,-87.32122],[41.188251,-87.321423],[41.188074,-87.321782],[41.18763,-87.322366],[41.186872,-87.323538],[41.186664,-87.323748],[41.186561,-87.323658],[41.18661,-87.323753],[41.186584,-87.323861],[41.186333,-87.324059],[41.186291,-87.324027],[41.186313,-87.324002],[41.186298,-87.324145],[41.186098,-87.324456],[41.185891,-87.324893],[41.185764,-87.325361],[41.185727,-87.326008],[41.18561,-87.326378],[41.185183,-87.327187],[41.184736,-87.327675],[41.18456,-87.328021],[41.184297,-87.328348],[41.183705,-87.329905],[41.183424,-87.33052],[41.183156,-87.330875],[41.182908,-87.331481],[41.182772,-87.332468],[41.18285,-87.333223],[41.182874,-87.334108],[41.182796,-87.335123],[41.182817,-87.335515],[41.18274,-87.336346],[41.182796,-87.337237],[41.182729,-87.337651],[41.182668,-87.338741],[41.182703,-87.339776],[41.182661,-87.340427],[41.18259,-87.340488],[41.182583,-87.341342],[41.182344,-87.342985],[41.182364,-87.344071],[41.182328,-87.344444],[41.182368,-87.345314],[41.182312,-87.346423],[41.181892,-87.347664],[41.181853,-87.348118],[41.181744,-87.348487],[41.181645,-87.349061],[41.181114,-87.349966],[41.180816,-87.350712],[41.180731,-87.351052],[41.179463,-87.354731],[41.179332,-87.355464],[41.179182,-87.356008],[41.178911,-87.356635],[41.178365,-87.358419],[41.177922,-87.359513],[41.177687,-87.360278],[41.177547,-87.361003],[41.176977,-87.362634],[41.176887,-87.363222],[41.176443,-87.364656],[41.175802,-87.367573],[41.175513,-87.368386],[41.175413,-87.369057],[41.175282,-87.369598],[41.175386,-87.370413],[41.17536,-87.370636],[41.174719,-87.371712],[41.174397,-87.372572],[41.174277,-87.373117],[41.174165,-87.374005],[41.173893,-87.375057],[41.173723,-87.375507],[41.173744,-87.375758],[41.173651,-87.376397],[41.173664,-87.376748],[41.173629,-87.377024],[41.173378,-87.377869],[41.173121,-87.378441],[41.172729,-87.37961],[41.172433,-87.380777],[41.171995,-87.381722],[41.171283,-87.382386],[41.17095,-87.382776],[41.170283,-87.383828],[41.170077,-87.383934],[41.169986,-87.383917],[41.169887,-87.383831],[41.169728,-87.38353],[41.169863,-87.383693],[41.169888,-87.383798],[41.169652,-87.38427],[41.169075,-87.38517],[41.168609,-87.385667],[41.168081,-87.386428],[41.167687,-87.38683],[41.167334,-87.387397],[41.166949,-87.38785],[41.166209,-87.389414],[41.165712,-87.389792],[41.165462,-87.38991],[41.165254,-87.390112],[41.164211,-87.391533],[41.163646,-87.392452],[41.163243,-87.392785],[41.162853,-87.39326],[41.162494,-87.393944],[41.162355,-87.394362],[41.162329,-87.394602],[41.162383,-87.395321],[41.162574,-87.395898],[41.162604,-87.396168],[41.162416,-87.397848],[41.162425,-87.39907],[41.162369,-87.400037],[41.162405,-87.400596],[41.162374,-87.401597],[41.162485,-87.402553],[41.162462,-87.402799],[41.162295,-87.403506],[41.162258,-87.403935],[41.162313,-87.404624],[41.162302,-87.404985],[41.162151,-87.405956],[41.162203,-87.407317],[41.162167,-87.407965],[41.162233,-87.409194],[41.162181,-87.410329],[41.16208,-87.41077],[41.162088,-87.411843],[41.162028,-87.413171],[41.161949,-87.413503],[41.161914,-87.413527],[41.161849,-87.413435],[41.161948,-87.41362],[41.16198,-87.414081],[41.162225,-87.414467],[41.162405,-87.41502],[41.162525,-87.415779],[41.162952,-87.416706],[41.163145,-87.417361],[41.16369,-87.418694],[41.164075,-87.419762],[41.164279,-87.42018],[41.164492,-87.42079],[41.164881,-87.421565],[41.165051,-87.422205],[41.165071,-87.422183],[41.16504,-87.422198],[41.165044,-87.422156],[41.165425,-87.422794],[41.165711,-87.423694],[41.165881,-87.42404],[41.166009,-87.424486],[41.166022,-87.424696],[41.165784,-87.424866],[41.16556,-87.424883],[41.165703,-87.424959],[41.166048,-87.424803],[41.166396,-87.425315],[41.16692,-87.426391],[41.167306,-87.427309],[41.16733,-87.427784],[41.167541,-87.428394],[41.168091,-87.429484],[41.168655,-87.431009],[41.169224,-87.432376],[41.169741,-87.433368],[41.170567,-87.435706],[41.170875,-87.436086],[41.171491,-87.437068],[41.171563,-87.437106],[41.171679,-87.437011],[41.17187,-87.436966],[41.171844,-87.436919],[41.171663,-87.436996],[41.171578,-87.437182],[41.171602,-87.437739],[41.171729,-87.438592],[41.173228,-87.442327],[41.173816,-87.444592],[41.174059,-87.445107],[41.174211,-87.445558],[41.174338,-87.446224],[41.174146,-87.446856],[41.174155,-87.447389],[41.173993,-87.448385],[41.173351,-87.450345],[41.172692,-87.451771],[41.17229,-87.453882],[41.171952,-87.454355],[41.171624,-87.454959],[41.17132,-87.455631],[41.17077,-87.457211],[41.170572,-87.457937],[41.170479,-87.458696],[41.170488,-87.460459],[41.170354,-87.460786],[41.170375,-87.461078],[41.170334,-87.462055],[41.170391,-87.462583],[41.170384,-87.464586],[41.170338,-87.465108],[41.170357,-87.466143],[41.170224,-87.466967],[41.170159,-87.468392],[41.170224,-87.4693],[41.170199,-87.470078],[41.170146,-87.470811],[41.170042,-87.470913],[41.169902,-87.470817],[41.169994,-87.470886],[41.170146,-87.470889],[41.170198,-87.471077],[41.170155,-87.472138],[41.170052,-87.473119],[41.170089,-87.473872],[41.170064,-87.473936],[41.170027,-87.473938],[41.169948,-87.473762],[41.17024,-87.474053],[41.170461,-87.47415],[41.170631,-87.474088],[41.170496,-87.474135],[41.170416,-87.474233],[41.170182,-87.474959],[41.170122,-87.475338],[41.170032,-87.476653],[41.170005,-87.477876],[41.169957,-87.478346],[41.169855,-87.478627],[41.169671,-87.478671],[41.169875,-87.478687],[41.169933,-87.478897],[41.169889,-87.481293],[41.169932,-87.482],[41.16988,-87.482927],[41.169916,-87.483507],[41.169877,-87.484369],[41.169651,-87.486001],[41.169627,-87.486749],[41.169468,-87.488044],[41.169382,-87.488364],[41.169276,-87.489201],[41.169309,-87.489929],[41.169184,-87.490888],[41.169276,-87.491819],[41.169058,-87.492456],[41.168887,-87.494772],[41.168813,-87.49539],[41.168691,-87.495952],[41.168603,-87.497543],[41.168457,-87.498733],[41.168423,-87.499635],[41.168274,-87.500288],[41.168196,-87.501951],[41.168296,-87.502706],[41.168132,-87.503263],[41.168006,-87.504252],[41.167848,-87.505092],[41.167751,-87.506457],[41.16763,-87.507399],[41.167651,-87.508863],[41.167492,-87.509457],[41.167384,-87.510258],[41.167355,-87.511029],[41.16727,-87.511752],[41.167285,-87.513105],[41.167008,-87.514491],[41.166973,-87.515225],[41.167015,-87.516067],[41.166859,-87.516559],[41.166824,-87.516959],[41.166855,-87.517679],[41.166759,-87.519531],[41.16656,-87.52108],[41.16639,-87.521639],[41.166332,-87.521698],[41.16637,-87.521721],[41.166374,-87.521836],[41.166226,-87.523878],[41.166069,-87.525157],[41.166138,-87.525329],[41.166508,-87.52574],[41.166529,-87.52586],[41.166827,-87.526034],[41.166837,-87.52613],[41.167123,-87.526098]]]}];
+const bounds=[[41.16184862, -87.5261304], [41.60604719, -86.4141875]];
+const colors=["#c62828","#1565c0","#2e7d32","#6a1b9a","#ef6c00","#37474f"];
+const tripStats=[{"name":"Jazinski to Kingsbury - May 7, 2025","date":"May 7, 2025","start":"10:08 AM CT","end":"4:30 PM CT","elapsedHours":6.363502777777778,"distanceMiles":12.335149620179413,"overallMph":1.938421346063593,"movingHours":5.6382808333333045,"movingMph":2.163444280073821,"startRM":131.6000061,"endRM":119.95443813139107,"riverMiles":11.64556796860893,"points":22911},{"name":"Kingsbury to Kankakee River Boat Ramp - May 9, 2025","date":"May 9, 2025","start":"9:53 AM CT","end":"5:42 PM CT","elapsedHours":7.829535833333334,"distanceMiles":15.995482207780789,"overallMph":2.0429668563086323,"movingHours":7.1938375000007575,"movingMph":2.2071317874423824,"startRM":119.91923947156565,"endRM":104.69473374874495,"riverMiles":15.224505722820695,"points":27868},{"name":"Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025","date":"May 30, 2025","start":"9:51 AM CT","end":"4:53 PM CT","elapsedHours":7.037357500000001,"distanceMiles":14.415552845970453,"overallMph":2.048432646198584,"movingHours":6.61863527777831,"movingMph":2.1642047946265777,"startRM":104.70667049559825,"endRM":90.82915940073123,"riverMiles":13.877511094867018,"points":25209},{"name":"Dunns Bridge to Baums Bridge Rd - May 31, 2025","date":"May 31, 2025","start":"10:11 AM CT","end":"1:36 PM CT","elapsedHours":3.4142058333333334,"distanceMiles":6.816474627866479,"overallMph":1.9965037143678788,"movingHours":3.2297191666664284,"movingMph":2.093063159407856,"startRM":90.82920714668015,"endRM":84.24082200000424,"riverMiles":6.588385146675904,"points":12214},{"name":"Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025","date":"June 2, 2025","start":"9:35 AM CT","end":"3:25 PM CT","elapsedHours":5.8342536111111105,"distanceMiles":12.304141726362044,"overallMph":2.1089487270366996,"movingHours":5.789795555555757,"movingMph":2.122338694761642,"startRM":84.24558262148786,"endRM":72.32224441866593,"riverMiles":11.923338202821924,"points":21005},{"name":"Grand Kankakee Marsh County Park to State Line - June 5, 2025","date":"June 5, 2025","start":"9:26 AM CT","end":"4:19 PM CT","elapsedHours":6.885107222222222,"distanceMiles":15.23121302778186,"overallMph":2.212196925361152,"movingHours":6.564054444444967,"movingMph":2.308230099701223,"startRM":72.17706725636474,"endRM":57.709886615262704,"riverMiles":14.467180641102033,"points":24658}];
+const segmentLabels=[
+  `Jazinski to Kingsbury - May 7, 2025<br><a href="videos/segment-1-flyover.mp4" class="segment-video-link" data-video="videos/segment-1-flyover.mp4" data-title="Jazinski to Kingsbury - May 7, 2025">▶ Watch 5-second flyover</a> <button type="button" class="flyover-info-button" aria-label="About this flyover" title="About this flyover">ⓘ</button><br><a href="https://arcgis.earthviews.com/public/kankakee-river-20250507d#12" target="_blank" rel="noopener noreferrer" class="segment-earthviews-link" title="Open the Earthviews 360-degree kayak virtual tour in a new tab">◉ Explore 360° kayak virtual tour (Earthviews)</a>`,
+  `Kingsbury to Kankakee River Boat Ramp - May 9, 2025<br><a href="videos/segment-2-flyover.mp4" class="segment-video-link" data-video="videos/segment-2-flyover.mp4" data-title="Kingsbury to Kankakee River Boat Ramp - May 9, 2025">▶ Watch 5-second flyover</a> <button type="button" class="flyover-info-button" aria-label="About this flyover" title="About this flyover">ⓘ</button><br><a href="https://arcgis.earthviews.com/public/kankakee-river-20250509d#42" target="_blank" rel="noopener noreferrer" class="segment-earthviews-link" title="Open the Earthviews 360-degree kayak virtual tour in a new tab">◉ Explore 360° kayak virtual tour (Earthviews)</a>`,
+  `Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025<br><a href="videos/segment-3-flyover.mp4" class="segment-video-link" data-video="videos/segment-3-flyover.mp4" data-title="Kankakee River Boat Ramp to Dunns Bridge - May 30, 2025">▶ Watch 5-second flyover</a> <button type="button" class="flyover-info-button" aria-label="About this flyover" title="About this flyover">ⓘ</button><br><a href="https://arcgis.earthviews.com/public/kankakee-river-20250530d#27" target="_blank" rel="noopener noreferrer" class="segment-earthviews-link" title="Open the Earthviews 360-degree kayak virtual tour in a new tab">◉ Explore 360° kayak virtual tour (Earthviews)</a>`,
+  `Dunns Bridge to Baums Bridge Rd - May 31, 2025<br><a href="videos/segment-4-flyover.mp4" class="segment-video-link" data-video="videos/segment-4-flyover.mp4" data-title="Dunns Bridge to Baums Bridge Rd - May 31, 2025">▶ Watch 5-second flyover</a> <button type="button" class="flyover-info-button" aria-label="About this flyover" title="About this flyover">ⓘ</button><br><a href="https://arcgis.earthviews.com/public/kankakee-river-20250531d#2" target="_blank" rel="noopener noreferrer" class="segment-earthviews-link" title="Open the Earthviews 360-degree kayak virtual tour in a new tab">◉ Explore 360° kayak virtual tour (Earthviews)</a>`,
+  `Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025<br><a href="videos/segment-5-flyover.mp4" class="segment-video-link" data-video="videos/segment-5-flyover.mp4" data-title="Baums Bridge Rd to Grand Kankakee Marsh County Park - June 2, 2025">▶ Watch 5-second flyover</a> <button type="button" class="flyover-info-button" aria-label="About this flyover" title="About this flyover">ⓘ</button><br><a href="https://arcgis.earthviews.com/public/kankakee-river-20250602d#0" target="_blank" rel="noopener noreferrer" class="segment-earthviews-link" title="Open the Earthviews 360-degree kayak virtual tour in a new tab">◉ Explore 360° kayak virtual tour (Earthviews)</a>`,
+  `Grand Kankakee Marsh County Park to State Line - June 5, 2025<br><a href="videos/segment-6-flyover.mp4" class="segment-video-link" data-video="videos/segment-6-flyover.mp4" data-title="Grand Kankakee Marsh County Park to State Line - June 5, 2025">▶ Watch 5-second flyover</a> <button type="button" class="flyover-info-button" aria-label="About this flyover" title="About this flyover">ⓘ</button><br><a href="https://arcgis.earthviews.com/public/kankakee-river-20250605d#0" target="_blank" rel="noopener noreferrer" class="segment-earthviews-link" title="Open the Earthviews 360-degree kayak virtual tour in a new tab">◉ Explore 360° kayak virtual tour (Earthviews)</a>`
+];
+
+const labelPositions=[
+  {fraction:0.32,direction:"top",offset:[0,-12]},
+  {fraction:0.58,direction:"bottom",offset:[0,12]},
+  {fraction:0.38,direction:"top",offset:[0,-12]},
+  {fraction:0.64,direction:"bottom",offset:[0,12]},
+  {fraction:0.30,direction:"top",offset:[0,-12]},
+  {fraction:0.70,direction:"bottom",offset:[0,12]}
+];
+
+
+const map=L.map("map",{preferCanvas:true,zoomControl:true});
+const road=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  maxZoom:19,
+  crossOrigin:true,
+  attribution:"&copy; OpenStreetMap contributors"
+});
+const satellite=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+  maxZoom:19,
+  crossOrigin:true,
+  attribution:"Tiles &copy; Esri"
+});
+road.addTo(map);
+L.control.layers({"Road map":road,"Satellite":satellite},null,{collapsed:false}).addTo(map);
+
+const watershedService =
+  "https://hydrowfs.nationalmap.gov/arcgis/rest/services/wbd/MapServer/4/query" +
+  "?where=" + encodeURIComponent("huc8='07120001'") +
+  "&outFields=huc8,name,areasqkm,states" +
+  "&returnGeometry=true&outSR=4326&f=geojson";
+
+let watershedLayer = null;
+const watershedToggle = document.getElementById("watershed-toggle");
+const watershedStatus = document.getElementById("watershed-status");
+
+fetch(watershedService)
+  .then(response => {
+    if (!response.ok) throw new Error("USGS service returned " + response.status);
+    return response.json();
+  })
+  .then(data => {
+    if (!data.features || !data.features.length) {
+      throw new Error("No watershed polygon was returned");
+    }
+
+    watershedLayer = L.geoJSON(data, {
+      style: {
+        color: "#0078b4",
+        weight: 3,
+        opacity: 0.95,
+        fillColor: "#0078b4",
+        fillOpacity: 0.12
+      },
+      onEachFeature: (feature, layer) => {
+        const p = feature.properties || {};
+        const area = Number(p.areasqkm);
+        layer.bindPopup(
+          "<strong>Kankakee River watershed</strong><br>" +
+          "USGS WBD HUC-8: " + (p.huc8 || "07120001") + "<br>" +
+          (Number.isFinite(area) ? "Area: " + area.toLocaleString(undefined, {maximumFractionDigits: 0}) + " km²<br>" : "") +
+          (p.states ? "States: " + p.states : "")
+        );
+      }
+    });
+
+    if (watershedToggle.checked) watershedLayer.addTo(map);
+    watershedStatus.textContent = "Boundary loaded. Click the blue outline for watershed information.";
+  })
+  .catch(error => {
+    watershedStatus.textContent =
+      "The watershed boundary could not load from the USGS service. Check the internet connection and reopen the map.";
+    watershedStatus.style.color = "#a12622";
+    console.error(error);
+  });
+
+watershedToggle.addEventListener("change", () => {
+  if (!watershedLayer) return;
+  if (watershedToggle.checked) watershedLayer.addTo(map);
+  else map.removeLayer(watershedLayer);
+});
+
+
+const records=[];
+const segmentDecorations=[];
+const replayRouteLayer=L.layerGroup();
+let replayVisualActive=false;
+let replayOriginalGroupVisibility=[];
+const list=document.getElementById("list");
+
+tracks.forEach((t,i)=>{
+  const color=colors[i%colors.length];
+  const group=L.featureGroup();
+  t.segments.forEach((seg,j)=>{
+    if(seg.length<2)return;
+    L.polyline(seg,{color:color,weight:4,opacity:.9,smoothFactor:1.5})
+      .bindPopup("<strong>"+t.name+"</strong><br>Track segment "+(j+1))
+      .addTo(group);
+    L.circleMarker(seg[0],{radius:4,color:color,fillColor:color,fillOpacity:1,weight:2})
+      .bindTooltip(t.name+" start").addTo(group);
+    L.circleMarker(seg[seg.length-1],{radius:4,color:color,fillColor:"#fff",fillOpacity:1,weight:2})
+      .bindTooltip(t.name+" end").addTo(group);
+  });
+  // Stagger permanent labels and connect each one to its track with a true
+  // leader line that updates whenever the map is panned or zoomed.
+  const longest=t.segments.reduce((best,seg)=>seg.length>best.length?seg:best,[]);
+  if(longest.length){
+    const cfg=labelPositions[i];
+    const anchor=longest[Math.min(
+      longest.length-1,
+      Math.max(0,Math.floor((longest.length-1)*cfg.fraction))
+    )];
+
+    const labelMarker=L.marker(anchor,{
+      interactive:true,
+      opacity:0,
+      keyboard:false
+    }).bindTooltip(segmentLabels[i],{
+      permanent:true,
+      direction:cfg.direction,
+      offset:cfg.offset,
+      className:"segment-label",
+      interactive:true,
+      opacity:1
+    }).addTo(group);
+
+    const anchorDot=L.circleMarker(anchor,{
+      radius:3,
+      className:"leader-anchor",
+      interactive:false
+    }).addTo(group);
+
+    const leader=L.polyline([anchor,anchor],{
+      className:"leader-line",
+      interactive:false
+    }).addTo(group);
+
+    const updateLeader=()=>{
+      if(replayVisualActive) return;
+      const tooltip=labelMarker.getTooltip();
+      const tooltipEl=tooltip && tooltip.getElement();
+      if(!tooltipEl || !map.hasLayer(group)) return;
+
+      const mapRect=map.getContainer().getBoundingClientRect();
+      const rect=tooltipEl.getBoundingClientRect();
+
+      // Connect to the label edge closest to the river anchor.
+      const anchorPt=map.latLngToContainerPoint(anchor);
+      const centerX=(rect.left+rect.right)/2-mapRect.left;
+      const topY=rect.top-mapRect.top;
+      const bottomY=rect.bottom-mapRect.top;
+      const leftX=rect.left-mapRect.left;
+      const rightX=rect.right-mapRect.left;
+      const centerY=(rect.top+rect.bottom)/2-mapRect.top;
+
+      const candidates=[
+        L.point(centerX,topY),
+        L.point(centerX,bottomY),
+        L.point(leftX,centerY),
+        L.point(rightX,centerY)
+      ];
+      let labelPt=candidates[0];
+      let best=Infinity;
+      candidates.forEach(p=>{
+        const d=p.distanceTo(anchorPt);
+        if(d<best){best=d;labelPt=p;}
+      });
+
+      leader.setLatLngs([
+        anchor,
+        map.containerPointToLatLng(labelPt)
+      ]);
+    };
+
+    labelMarker.on("tooltipopen",()=>setTimeout(updateLeader,0));
+    map.on("zoom move resize",updateLeader);
+    group.on("add",()=>setTimeout(updateLeader,0));
+    segmentDecorations.push({
+      group,
+      labelMarker,
+      anchorDot,
+      leader,
+      updateLeader,
+      hiddenForReplay:false
+    });
+    setTimeout(updateLeader,0);
+  }
+
+  group.addTo(map);
+  records.push(group);
+
+  const row=document.createElement("label");
+  row.className="row";
+  const box=document.createElement("input");
+  box.type="checkbox";
+  box.checked=true;
+  box.addEventListener("change",()=>{
+    if(box.checked)group.addTo(map);else map.removeLayer(group);
+  });
+  const sw=document.createElement("span");
+  sw.className="swatch";
+  sw.style.background=color;
+  const txt=document.createElement("span");
+  const s=tripStats[i];
+  txt.innerHTML='<div class="name">'+t.name+'</div><div class="trip-stats">'+
+    '<strong>'+s.riverMiles.toFixed(1)+' river mi</strong> (RM '+s.startRM.toFixed(1)+' → '+s.endRM.toFixed(1)+')<br>'+ 
+    s.distanceMiles.toFixed(1)+' GPS mi · '+s.elapsedHours.toFixed(1)+' hr · '+s.overallMph.toFixed(2)+' mph overall<br>'+ 
+    s.start+'–'+s.end+' · '+s.movingMph.toFixed(2)+' mph moving</div><div class="meta">'+
+    t.original_points.toLocaleString()+' original points → '+t.display_points.toLocaleString()+' display points</div>';
+  row.append(box,sw,txt);
+  list.appendChild(row);
+});
+
+// Create a completely separate replay-only route layer.
+tracks.forEach((t,i)=>{
+  t.segments.forEach(seg=>{
+    L.polyline(seg,{
+      color:t.color,
+      weight:5,
+      opacity:.95,
+      interactive:false,
+      className:"replay-route-line"
+    }).addTo(replayRouteLayer);
+  });
+});
+
+function fitAllSurveySegments(){
+  map.fitBounds(bounds,{paddingTopLeft:[35,35],paddingBottomRight:[35,35],animate:false});
+  setTimeout(()=>map.invalidateSize(),50);
+}
+function fitReplayExtent(){
+  const scope=document.getElementById("replayScope").value;
+  if(scope==="all"){
+    fitAllSurveySegments();
+    return;
+  }
+  const segmentIndex=Number(scope);
+  const segmentStops=replayStops.filter(s=>s.segmentIndex===segmentIndex);
+  if(segmentStops.length){
+    const segmentBounds=L.latLngBounds(segmentStops.map(s=>[s.lat,s.lon]));
+    map.fitBounds(segmentBounds,{paddingTopLeft:[45,45],paddingBottomRight:[45,45],animate:false});
+    setTimeout(()=>map.invalidateSize(),50);
+  }
+}
+fitAllSurveySegments();
+setTimeout(fitAllSurveySegments,250);
+setTimeout(fitAllSurveySegments,700);
+setTimeout(()=>map.invalidateSize(),1000);
+setTimeout(()=>map.invalidateSize(),250);
+
+document.getElementById("all").addEventListener("click",()=>{
+  document.querySelectorAll('#list input').forEach((b,i)=>{b.checked=true;records[i].addTo(map);});
+});
+document.getElementById("none").addEventListener("click",()=>{
+  document.querySelectorAll('#list input').forEach((b,i)=>{b.checked=false;map.removeLayer(records[i]);});
+});
+document.getElementById("fit").addEventListener("click",()=>map.fitBounds(bounds,{padding:[25,25]}));
+L.control.scale({imperial:true,metric:true}).addTo(map);
+
+
+const flyoverInfoPopover=document.getElementById("flyoverInfoPopover");
+let activeInfoButton=null;
+
+function closeFlyoverInfo(){
+  flyoverInfoPopover.classList.remove("open");
+  activeInfoButton=null;
+}
+
+function openFlyoverInfo(button){
+  activeInfoButton=button;
+  flyoverInfoPopover.classList.add("open");
+  const rect=button.getBoundingClientRect();
+  const popRect=flyoverInfoPopover.getBoundingClientRect();
+  let left=rect.left + rect.width/2 - popRect.width/2;
+  left=Math.max(8,Math.min(left,window.innerWidth-popRect.width-8));
+  let top=rect.bottom+8;
+  if(top+popRect.height>window.innerHeight-8){
+    top=rect.top-popRect.height-8;
+  }
+  flyoverInfoPopover.style.left=left+"px";
+  flyoverInfoPopover.style.top=Math.max(8,top)+"px";
+}
+
+const videoModal=document.getElementById("videoModal");
+const flyoverVideo=document.getElementById("flyoverVideo");
+const videoTitle=document.getElementById("videoTitle");
+const videoClose=document.getElementById("videoClose");
+
+function closeFlyover(){
+  flyoverVideo.pause();
+  flyoverVideo.removeAttribute("src");
+  flyoverVideo.load();
+  videoModal.classList.remove("open");
+}
+
+document.addEventListener("click",event=>{
+
+  const infoButton=event.target.closest(".flyover-info-button");
+  if(infoButton){
+    event.preventDefault();
+    event.stopPropagation();
+    if(activeInfoButton===infoButton && flyoverInfoPopover.classList.contains("open")){
+      closeFlyoverInfo();
+    }else{
+      openFlyoverInfo(infoButton);
+    }
+    return;
+  }
+  const link=event.target.closest(".segment-video-link");
+  if(!link) return;
+  event.preventDefault();
+  event.stopPropagation();
+  videoTitle.textContent=link.dataset.title || "Google Earth flyover";
+  flyoverVideo.src=link.dataset.video;
+  videoModal.classList.add("open");
+  flyoverVideo.play().catch(()=>{});
+});
+videoClose.addEventListener("click",closeFlyover);
+document.addEventListener("click",event=>{
+  if(flyoverInfoPopover.classList.contains("open") &&
+     !event.target.closest(".flyover-info-button") &&
+     !event.target.closest("#flyoverInfoPopover")){
+    closeFlyoverInfo();
+  }
+});
+map.on("movestart zoomstart",closeFlyoverInfo);
+window.addEventListener("resize",closeFlyoverInfo);
+videoModal.addEventListener("click",event=>{
+  if(event.target===videoModal) closeFlyover();
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape" && videoModal.classList.contains("open")) closeFlyover();
+  if(event.key==="Escape") closeFlyoverInfo();
+});
+
+
+// --- Official DNR river-mile layers and EarthViews trip replay ---
+const wholeMileLayer=L.layerGroup();
+const tenthMileLayer=L.layerGroup();
+officialDNRPoints.forEach(p=>{
+  if(Math.abs(p.rm-Math.round(p.rm))<0.051){
+    const icon=L.divIcon({className:"rm-replay-icon",html:String(Math.round(p.rm)),iconSize:[27,21],iconAnchor:[13,10]});
+    L.marker([p.lat,p.lon],{icon}).bindPopup(`<strong>Indiana DNR River Mile ${p.rm.toFixed(1)}</strong><br>Official KML reference coordinate.`).addTo(wholeMileLayer);
+  }
+  L.circleMarker([p.lat,p.lon],{radius:2,color:"#475569",weight:1,fillOpacity:.65})
+    .bindPopup(`<strong>Indiana DNR River Mile ${p.rm.toFixed(1)}</strong><br>Official KML reference coordinate.`)
+    .addTo(tenthMileLayer);
+});
+document.getElementById("dnr-whole-toggle").addEventListener("change",e=>e.target.checked?wholeMileLayer.addTo(map):map.removeLayer(wholeMileLayer));
+document.getElementById("dnr-tenths-toggle").addEventListener("change",e=>e.target.checked?tenthMileLayer.addTo(map):map.removeLayer(tenthMileLayer));
+
+const replayIcon=L.divIcon({className:"replay-marker",html:"",iconSize:[22,22],iconAnchor:[11,11]});
+const replayMarker=L.marker([replayStops[0].lat,replayStops[0].lon],{icon:replayIcon,zIndexOffset:1500});
+let replayFiltered=replayStops.slice();
+let replayIndex=0;
+let replayTimer=null;
+const replayProgress=document.getElementById("replayProgress");
+const replayStatus=document.getElementById("replayStatus");
+const evFrame=document.getElementById("earthviewsFrame");
+const evMeta=document.getElementById("earthviewsMeta");
+const evOpen=document.getElementById("earthviewsOpen");
+const evCaption=document.getElementById("earthviewsLocationCaption");
+const explorerShell=document.querySelector(".explorer-shell");
+
+function setReplayVisualMode(active){
+  if(active===replayVisualActive) return;
+  replayVisualActive=active;
+  if(explorerShell) explorerShell.classList.toggle("replay-active",active);
+
+  if(active){
+    // Record which normal survey groups were visible, then remove every
+    // normal group. These groups contain the labels and all leader objects.
+    replayOriginalGroupVisibility=records.map(r=>map.hasLayer(r.group));
+    records.forEach(r=>{
+      if(map.hasLayer(r.group)) map.removeLayer(r.group);
+    });
+
+    // Display only clean route polylines and the moving replay marker.
+    if(!map.hasLayer(replayRouteLayer)) replayRouteLayer.addTo(map);
+    if(!map.hasLayer(replayMarker)) replayMarker.addTo(map);
+  }else{
+    // Remove the replay-only geometry first.
+    if(map.hasLayer(replayRouteLayer)) map.removeLayer(replayRouteLayer);
+
+    // Restore normal groups exactly as they were before replay began.
+    records.forEach((r,i)=>{
+      if(replayOriginalGroupVisibility[i] && !map.hasLayer(r.group)){
+        r.group.addTo(map);
+      }
+    });
+    replayOriginalGroupVisibility=[];
+
+    // Recalculate only the original short non-playback leader lines.
+    setTimeout(()=>{
+      segmentDecorations.forEach(d=>{
+        if(map.hasLayer(d.group) && d.updateLeader) d.updateLeader();
+      });
+    },120);
+    setTimeout(()=>{
+      segmentDecorations.forEach(d=>{
+        if(map.hasLayer(d.group) && d.updateLeader) d.updateLeader();
+      });
+    },350);
+  }
+}
+function fitReplayExtentLower(){
+  const scope=document.getElementById("replayScope").value;
+  const sourceStops=scope==="all"
+    ? replayStops
+    : replayStops.filter(s=>String(s.segmentIndex)===scope);
+  if(!sourceStops.length) return;
+
+  const replayBounds=L.latLngBounds(sourceStops.map(s=>[s.lat,s.lon]));
+  const mapSize=map.getSize();
+
+  // Reserve the upper portion of the map for the cinematic EarthViews panel.
+  // Fitting with extra top padding shifts the full route lower in the remaining map.
+  const topPadding=previewIsOpen()
+    ? Math.min(470,Math.max(330,mapSize.y*0.46))
+    : 45;
+
+  map.fitBounds(replayBounds,{
+    paddingTopLeft:[55,topPadding],
+    paddingBottomRight:[55,55],
+    animate:false
+  });
+  setTimeout(()=>map.invalidateSize(),50);
+}
+
+function updateReplayFilter(panToFirst=false){
+  const scope=document.getElementById("replayScope").value;
+  replayFiltered=scope==="all"?replayStops.slice():replayStops.filter(s=>String(s.segmentIndex)===scope);
+  replayIndex=0;
+  replayProgress.max=Math.max(0,replayFiltered.length-1);
+  replayProgress.value=0;
+  if(panToFirst){
+    showReplayStop(0,true);
+  }else if(replayFiltered.length){
+    const s=replayFiltered[0];
+    replayMarker.setLatLng([s.lat,s.lon]);
+    replayStatus.innerHTML=`Ready to begin at <strong>River Mile ${s.riverMile.toFixed(1)}</strong> — ${s.segment}.`;
+    evOpen.href=s.earthviews;
+  }
+}
+function showReplayStop(index,pan=true){
+  if(!replayFiltered.length)return;
+  replayIndex=Math.max(0,Math.min(index,replayFiltered.length-1));
+  const s=replayFiltered[replayIndex];
+  replayProgress.value=replayIndex;
+  replayMarker.setLatLng([s.lat,s.lon]);
+  // Keep the route and map fixed during playback. Only the marker,
+  // EarthViews image, captions, and progress controls advance.
+  if(pan && !map.getBounds().contains([s.lat,s.lon])){
+    // Safety fallback only: restore the selected fixed replay extent if the
+    // user has manually panned far enough that the current marker is outside view.
+    fitReplayExtentLower();
+  }
+  const openingText=(s.earthviews==="https://arcgis.earthviews.com/public/kankakee-river-20250507d#12")?"<br><strong>Beginning of the 75-mile tour</strong>":"";
+  replayStatus.innerHTML=`<strong>River Mile ${s.riverMile.toFixed(1)}</strong><br>${s.segment}<br>Stop ${replayIndex+1} of ${replayFiltered.length} · EarthViews image ${s.image.toLocaleString()}${openingText}`;
+  const openingMeta=(s.earthviews==="https://arcgis.earthviews.com/public/kankakee-river-20250507d#12")?"<br><strong>Opening EarthViews location for the full survey replay</strong>":"";
+  evMeta.innerHTML=`<strong>River Mile ${s.riverMile.toFixed(1)}</strong> — ${s.segment}<br>EarthViews image ${s.image.toLocaleString()} · approximately ${s.elapsedHours.toFixed(1)} hours into this survey day${openingMeta}`;
+  evCaption.textContent=`River Mile ${s.riverMile.toFixed(1)} • ${s.segment} • ${s.date}`;
+  if(previewIsOpen()) evFrame.src=s.earthviews;
+  evOpen.href=s.earthviews;
+}
+function stopReplay(restoreNormalMap=true){
+  if(replayTimer){clearTimeout(replayTimer);replayTimer=null;}
+  if(restoreNormalMap){
+    setReplayVisualMode(false);
+    if(previewIsOpen() && !map.hasLayer(replayMarker)) replayMarker.addTo(map);
+  }
+}
+function playReplay(){
+  stopReplay(false);
+  setReplayVisualMode(true);
+  fitReplayExtentLower();
+  const advance=()=>{
+    showReplayStop(replayIndex,false);
+    if(replayIndex<replayFiltered.length-1){
+      replayIndex++;
+      replayTimer=setTimeout(advance,Number(document.getElementById("replaySpeed").value));
+    }else{
+      replayTimer=null;
+      setReplayVisualMode(false);
+      if(previewIsOpen() && !map.hasLayer(replayMarker)) replayMarker.addTo(map);
+      replayStatus.innerHTML+=`<br><strong>Replay complete.</strong>`;
+    }
+  };
+  advance();
+}
+document.getElementById("replayPlay").addEventListener("click",playReplay);
+document.getElementById("replayPause").addEventListener("click",stopReplay);
+document.getElementById("replayRestart").addEventListener("click",()=>{
+  stopReplay(false);
+  replayIndex=0;
+  replayProgress.value=0;
+  if(!previewIsOpen()) openEarthviewsPreview();
+  setReplayVisualMode(true);
+  fitReplayExtentLower();
+  showReplayStop(0,false);
+  setTimeout(playReplay,250);
+});
+document.getElementById("replayPrevious").addEventListener("click",()=>{stopReplay();showReplayStop(replayIndex-1,false)});
+document.getElementById("replayNext").addEventListener("click",()=>{stopReplay();showReplayStop(replayIndex+1,false)});
+document.getElementById("replayScope").addEventListener("change",()=>{
+  stopReplay();
+  updateReplayFilter(false);
+  fitReplayExtentLower();
+  showReplayStop(0,false);
+});
+replayProgress.addEventListener("input",()=>{stopReplay();showReplayStop(Number(replayProgress.value),false)});
+const earthviewsPanel=document.getElementById("earthviewsPanel");
+const earthviewsLaunch=document.getElementById("earthviewsLaunch");
+
+function previewIsOpen(){
+  return !earthviewsPanel.classList.contains("hidden");
+}
+function openEarthviewsPreview(){
+  stopReplay();
+  earthviewsPanel.classList.remove("hidden");
+  if(!map.hasLayer(replayMarker)) replayMarker.addTo(map);
+  earthviewsLaunch.textContent="EarthViews preview is open";
+  if(replayFiltered.length){
+    const s=replayFiltered[replayIndex];
+    evFrame.src=s.earthviews;
+    evOpen.href=s.earthviews;
+    const openingMeta=(s.earthviews==="https://arcgis.earthviews.com/public/kankakee-river-20250507d#12")?"<br><strong>Opening EarthViews location for the full survey replay</strong>":"";
+    evMeta.innerHTML=`<strong>River Mile ${s.riverMile.toFixed(1)}</strong> — ${s.segment}<br>EarthViews image ${s.image.toLocaleString()}${openingMeta}<br><strong>Press Play when you are ready.</strong>`;
+    evCaption.textContent=`River Mile ${s.riverMile.toFixed(1)} • ${s.segment} • ${s.date}`;
+  }
+  const shell=document.querySelector(".explorer-shell");
+  if(shell){
+    const top=shell.getBoundingClientRect().top+window.scrollY-70;
+    window.scrollTo({top,behavior:"smooth"});
+  }
+  setTimeout(()=>{
+    map.invalidateSize();
+    fitReplayExtentLower();
+  },350);
+}
+function closeEarthviewsPreview(){
+  stopReplay();
+  earthviewsPanel.classList.remove("expanded");
+  if(typeof earthviewsExpand!=="undefined" && earthviewsExpand) earthviewsExpand.textContent="Expand";
+  setReplayVisualMode(false);
+  earthviewsPanel.classList.add("hidden");
+  earthviewsLaunch.textContent="Open EarthViews trip preview";
+  if(map.hasLayer(replayMarker)) map.removeLayer(replayMarker);
+  setTimeout(()=>{
+    map.invalidateSize();
+    fitReplayExtentLower();
+  },80);
+}
+earthviewsLaunch.addEventListener("click",()=>{
+  if(previewIsOpen()) closeEarthviewsPreview();
+  else openEarthviewsPreview();
+});
+document.getElementById("earthviewsCollapse").addEventListener("click",closeEarthviewsPreview);
+updateReplayFilter(false);
+
+
+// Welcome page navigation and information modals.
+document.querySelectorAll("[data-modal]").forEach(button=>{
+  button.addEventListener("click",()=>{
+    const modal=document.getElementById(button.dataset.modal);
+    if(modal) modal.classList.add("open");
+  });
+});
+document.querySelectorAll("[data-close-modal]").forEach(button=>{
+  button.addEventListener("click",()=>button.closest(".modal-overlay").classList.remove("open"));
+});
+document.querySelectorAll(".modal-overlay").forEach(modal=>{
+  modal.addEventListener("click",event=>{
+    if(event.target===modal) modal.classList.remove("open");
+  });
+});
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape") document.querySelectorAll(".modal-overlay.open").forEach(m=>m.classList.remove("open"));
+});
+const welcomeReplay=document.getElementById("launchReplayWelcome");
+if(welcomeReplay){
+  welcomeReplay.addEventListener("click",()=>{
+    setTimeout(()=>{
+      if(!previewIsOpen()) openEarthviewsPreview();
+    },450);
+  });
+}
+
+
+// Dashboard gallery cards: open full public GitHub Pages URLs.
+document.querySelectorAll(".live-dashboard-card").forEach(card=>{
+  const openCard=event=>{
+    if(event && event.target.closest("a")) return;
+    const url=card.dataset.dashboardUrl;
+    if(url) window.open(url,"_blank","noopener");
+  };
+  card.addEventListener("click",openCard);
+  card.addEventListener("keydown",event=>{
+    if(event.key==="Enter" || event.key===" "){
+      event.preventDefault();
+      openCard(event);
+    }
+  });
+});
+
+
+// Moveable and expandable EarthViews preview window.
+const earthviewsExpand=document.getElementById("earthviewsExpand");
+const earthviewsHeader=document.getElementById("earthviewsHeader");
+let previewDragState=null;
+let previewRestoreState=null;
+
+function clampPreviewPosition(left,top){
+  const shellRect=explorerShell.getBoundingClientRect();
+  const panelRect=earthviewsPanel.getBoundingClientRect();
+  const maxLeft=Math.max(0,shellRect.width-panelRect.width);
+  const maxTop=Math.max(0,shellRect.height-panelRect.height);
+  return {
+    left:Math.min(Math.max(0,left),maxLeft),
+    top:Math.min(Math.max(0,top),maxTop)
+  };
+}
+
+function beginPreviewDrag(event){
+  if(event.target.closest("button") || earthviewsPanel.classList.contains("expanded")) return;
+  const shellRect=explorerShell.getBoundingClientRect();
+  const panelRect=earthviewsPanel.getBoundingClientRect();
+  previewDragState={
+    pointerId:event.pointerId,
+    offsetX:event.clientX-panelRect.left,
+    offsetY:event.clientY-panelRect.top,
+    shellLeft:shellRect.left,
+    shellTop:shellRect.top
+  };
+  earthviewsPanel.classList.add("dragging");
+  earthviewsHeader.setPointerCapture(event.pointerId);
+  event.preventDefault();
+}
+
+function movePreview(event){
+  if(!previewDragState || event.pointerId!==previewDragState.pointerId) return;
+  const requestedLeft=event.clientX-previewDragState.shellLeft-previewDragState.offsetX;
+  const requestedTop=event.clientY-previewDragState.shellTop-previewDragState.offsetY;
+  const clamped=clampPreviewPosition(requestedLeft,requestedTop);
+  earthviewsPanel.style.left=`${clamped.left}px`;
+  earthviewsPanel.style.right="auto";
+  earthviewsPanel.style.top=`${clamped.top}px`;
+}
+
+function endPreviewDrag(event){
+  if(!previewDragState || event.pointerId!==previewDragState.pointerId) return;
+  previewDragState=null;
+  earthviewsPanel.classList.remove("dragging");
+  try{earthviewsHeader.releasePointerCapture(event.pointerId);}catch(error){}
+}
+
+earthviewsHeader.addEventListener("pointerdown",beginPreviewDrag);
+earthviewsHeader.addEventListener("pointermove",movePreview);
+earthviewsHeader.addEventListener("pointerup",endPreviewDrag);
+earthviewsHeader.addEventListener("pointercancel",endPreviewDrag);
+
+earthviewsExpand.addEventListener("click",()=>{
+  const expanding=!earthviewsPanel.classList.contains("expanded");
+  if(expanding){
+    previewRestoreState={
+      left:earthviewsPanel.style.left,
+      right:earthviewsPanel.style.right,
+      top:earthviewsPanel.style.top,
+      width:earthviewsPanel.style.width,
+      height:earthviewsPanel.style.height
+    };
+    earthviewsPanel.classList.add("expanded");
+    earthviewsExpand.textContent="Restore";
+  }else{
+    earthviewsPanel.classList.remove("expanded");
+    earthviewsPanel.style.left=previewRestoreState?.left || "";
+    earthviewsPanel.style.right=previewRestoreState?.right || "";
+    earthviewsPanel.style.top=previewRestoreState?.top || "";
+    earthviewsPanel.style.width=previewRestoreState?.width || "";
+    earthviewsPanel.style.height=previewRestoreState?.height || "";
+    earthviewsExpand.textContent="Expand";
+  }
+});
+
+</script>
 </body>
 </html>

@@ -1,0 +1,204 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kankakee Erosion & Bank Height Viewer — DRAFT v1.6</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>body{font:13px Arial;margin:0;background:#eef3f5;color:#17313d}header{background:#17313d;color:#fff;padding:14px 18px}.grid{display:grid;grid-template-columns:330px 1fr;gap:12px;padding:12px}.p{background:#fff;padding:12px;border-radius:8px;margin-bottom:12px;box-shadow:0 1px 4px #0002}h2{font-size:16px;margin:0 0 8px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px}.s{background:#f0f5f7;padding:8px;border-radius:6px}.v{font-size:20px;font-weight:bold}.l,.note{font-size:11px;color:#58707b}.note{line-height:1.45}#map{height:430px;border-radius:7px}.mapLocationLabel{margin:7px 0 0;padding:6px 8px;background:#eef5f8;border:1px solid #c9d5db;border-radius:6px;font-size:11px;font-weight:bold;color:#17313d}.evPreview{height:300px;border:1px solid #c9d5db;border-radius:7px;overflow:hidden;background:#eef3f5}.evPreview iframe{width:100%;height:100%;border:0;display:block}.navrow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.navrow button{width:100%;font-weight:bold}.selectedMarker{filter:drop-shadow(0 0 2px #17313d)}
+.selectionTarget{width:30px;height:30px;border:4px solid #000;border-radius:50%;background:rgba(255,255,255,.25);box-shadow:0 0 0 4px rgba(255,255,255,.9),0 0 0 7px rgba(0,0,0,.35);position:relative}
+.selectionTarget:before,.selectionTarget:after{content:"";position:absolute;background:#000}
+.selectionTarget:before{width:4px;height:42px;left:9px;top:-10px}
+.selectionTarget:after{height:4px;width:42px;top:9px;left:-10px}table{width:100%;border-collapse:collapse;font-size:11px}th,td{padding:6px;border-bottom:1px solid #ddd;vertical-align:top;text-align:left}tbody tr:hover{background:#edf6fa;cursor:pointer}input{width:85px}button{padding:7px;border:1px solid #7898aa;background:#eef5f8;border-radius:6px}
+.measureGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.measureGrid label{font-size:11px;color:#405862}
+.measureGrid input,.measureGrid select{width:100%;box-sizing:border-box;padding:6px;margin-top:3px}
+.measureGrid textarea{width:100%;box-sizing:border-box;min-height:64px;padding:6px;margin-top:3px}
+.calcBox{margin-top:9px;padding:9px;border:1px solid #c9d5db;border-radius:6px;background:#f6fafb;line-height:1.5}
+.full{grid-column:1/-1}@media(max-width:900px){.grid{grid-template-columns:1fr}}</style></head>
+<body><header><b>Kankakee River May 9, 2025 — Erosion & Bank Height Viewer — DRAFT v1.6</b><br><small>Severe/heavy verbal erosion observations joined to nearest 0.1-mile DEM bank-height analysis</small></header>
+<div class="grid"><aside>
+<div class="p"><h2>Observed severe/heavy erosion</h2><div class="stats"><div class="s"><div class="l">Observations</div><div class="v">28</div></div><div class="s"><div class="l">Explicit numeric length</div><div class="v">3</div></div></div><p class="note">This pilot includes May 9 observations explicitly using “severe,” “severely,” or “heavy” erosion terminology. No erosion length is invented when the observation does not state one.</p></div>
+<div class="p"><h2>Selected observation</h2><div id="detail" class="note">Click a map point or table row.</div></div>
+<div class="p"><h2>Erosion Reach Measurement</h2>
+<p class="note">Use EarthViews to identify the beginning and end of a continuous severe-erosion reach and measure the distance with the EarthViews ruler. Enter that human-reviewed measurement here. The bank-height value comes from the selected DEM cross-section.</p>
+<div class="measureGrid">
+<label>Start EarthViews image<input id="reachStartImage" type="number" step="1"></label>
+<label>End EarthViews image<input id="reachEndImage" type="number" step="1"></label>
+<label>Measured erosion-reach length (ft)<input id="reachLengthFt" type="number" step="1" min="0"></label>
+<label>Severely eroded fraction of bank face (%)<input id="erodedFractionPct" type="number" step="5" min="0" max="100"></label>
+<label>Measurement confidence
+<select id="reachConfidence"><option value="">Select…</option><option>High</option><option>Moderate</option><option>Low</option></select></label>
+<label>Bank side
+<select id="reachBankSide"><option value="">Use selected observation</option><option>River-left</option><option>River-right</option><option>Both</option></select></label>
+<label class="full">Measurement notes<textarea id="reachNotes" placeholder="e.g., continuous exposed sandy/slumping bank; erosion covers about half of visible bank face"></textarea></label>
+</div>
+<button id="calcReach" type="button" style="margin-top:9px">Calculate bank-face areas</button>
+<div id="reachCalc" class="calcBox"><strong>Select an erosion observation and enter the EarthViews reach measurement.</strong></div>
+</div>
+<div class="p"><h2>Exploratory annual-loss calculator</h2><p class="note">Uses the EarthViews-measured reach length above when available; otherwise it can use a numeric erosion length explicitly stated in the verbal observation. Retreat rate and bulk density are user-supplied assumptions, not 2025 measurements.</p>
+Annual retreat <input id="retreat" type="number" value=".10" step=".01"> m/yr<br><br>Bulk density <input id="density" type="number" value="1300" step="10"> kg/m³<br><br><button onclick="calc()">Calculate selected record</button><p id="calc" class="note"></p></div>
+</aside><main><div class="p">
+<h2>EarthViews erosion screening preview</h2>
+<div id="evLabel" class="note" style="margin-bottom:7px">Select an erosion observation.</div>
+<div class="evPreview"><iframe id="evFrame" title="EarthViews preview" loading="lazy"></iframe></div>
+<div class="navrow">
+<button id="prevObs" type="button">← Previous Observation</button>
+<button id="nextObs" type="button">Next Observation →</button>
+</div>
+<p class="note">The EarthViews preview, selected map point, observation details, and table row move together. Use Previous/Next Observation to screen the severe-erosion observations in survey order.</p>
+</div>
+<div class="p"><h2>Severe/heavy erosion locations</h2><div id="map"></div><div id="mapLocationLabel" class="mapLocationLabel">Selected EarthViews/erosion location will be shown here.</div><div class="note" style="margin-top:5px"><strong>The open map popup identifies the observation currently shown in EarthViews.</strong></div><p class="note">Fill color identifies river-left, river-right, both banks, or unspecified. The map centers and zooms to the currently selected EarthViews location, and that observation’s popup opens automatically.</p></div>
+<div class="p"><h2>Joined observation table</h2><div style="max-height:430px;overflow:auto"><table><thead><tr><th>Record</th><th>RM</th><th>Bank</th><th>Height</th><th>Stated length</th><th>Bank-face area</th><th>Observation</th></tr></thead><tbody id="tb"></tbody></table></div></div></main></div>
+<script>
+const D=[{"record":544,"time":"11:20:20","lat":41.48777488287155,"lon":-86.58912517815595,"observation":"severe erosion on the left bank and no tree cover.","side":"River-left","rm":119.5,"match_m":13.6,"bank_height_ft":8.46,"left_ft":8.46,"right_ft":10.52,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#146","evImage":146},{"record":548,"time":"11:22:39","lat":41.48723678058949,"lon":-86.59088309665043,"observation":"severe erosion on the left bank.","side":"River-left","rm":119.4,"match_m":18.2,"bank_height_ft":8.06,"left_ft":8.06,"right_ft":10.66,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#161","evImage":161},{"record":578,"time":"11:38:39","lat":41.4840653173997,"lon":-86.59935068162832,"observation":"erosion. This is very severe erosion. On the right bank, you can see root mats, root wads, undercut banks. The riparian zone is pretty wide. Channel morphology, there's no sinuosity.","side":"River-right","rm":118.9,"match_m":45.7,"bank_height_ft":11.82,"left_ft":10.62,"right_ft":11.82,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#264","evImage":264},{"record":582,"time":"11:41:56","lat":41.48349576311775,"lon":-86.60047485535928,"observation":"erosion, severe erosion, and now four o'clock,","side":"River-right","rm":118.9,"match_m":69.2,"bank_height_ft":11.82,"left_ft":10.62,"right_ft":11.82,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#264","evImage":264},{"record":590,"time":"11:45:32","lat":41.48183217327816,"lon":-86.6015877811103,"observation":"erosion. This is a example of severe erosion.","side":"Unspecified","rm":118.7,"match_m":69.4,"bank_height_ft":12.25,"left_ft":12.25,"right_ft":11.43,"qa":"Review recommended","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#303","evImage":303},{"record":593,"time":"11:47:00","lat":41.48103677748973,"lon":-86.60211362875762,"observation":"erosion. This is a example of severe bank erosion on the right hand side, all from what looks like slumping grass or slumping bank that grass is growing on top of.","side":"Unspecified","rm":118.7,"match_m":30.2,"bank_height_ft":12.25,"left_ft":12.25,"right_ft":11.43,"qa":"Review recommended","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#303","evImage":303},{"record":611,"time":"11:56:43","lat":41.47540363001836,"lon":-86.6055115969022,"observation":"erosion on the right bank, severe erosion.","side":"River-right","rm":118.3,"match_m":75.8,"bank_height_ft":11.74,"left_ft":13.76,"right_ft":11.74,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#358","evImage":358},{"record":612,"time":"11:56:51","lat":41.47532003511341,"lon":-86.60555617739449,"observation":"severe erosion on the left bank, and see lots of exposed soil in between the trees and roots, the second layer, second level, actually the first level is grassy clumps.","side":"River-left","rm":118.2,"match_m":85.2,"bank_height_ft":10.26,"left_ft":10.26,"right_ft":7.97,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#371","evImage":371},{"record":617,"time":"11:58:24","lat":41.47432101160714,"lon":-86.60610108570422,"observation":"severe erosion on the right bank.","side":"River-right","rm":118.2,"match_m":34.7,"bank_height_ft":7.97,"left_ft":10.26,"right_ft":7.97,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#371","evImage":371},{"record":621,"time":"12:02:15","lat":41.47251616447968,"lon":-86.60719230564077,"observation":"Bank erosion there is heavy, both of them heavy, severe. Pool. It's really glide and it's deeper than a meter. Current velocity is moderate. Riparian zone, riparian width, so essentially none on either side. Riffle gradient is very low. Gradient esthetics we're seeing, seeing open, there's, I don't know, similar turbidity, little bit of trash. Don't see a lot of nuisance algae here.","side":"Both","rm":118.0,"match_m":63.6,"bank_height_ft":9.02,"left_ft":9.02,"right_ft":7.92,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#407","evImage":407},{"record":625,"time":"12:13:55","lat":41.46882790369519,"lon":-86.60957381297611,"observation":"severe erosion all along this last several minutes on this grassy bank.","side":"Unspecified","rm":117.8,"match_m":63.5,"bank_height_ft":11.08,"left_ft":11.08,"right_ft":10.03,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#458","evImage":458},{"record":671,"time":"12:48:00","lat":41.45234555276435,"lon":-86.62008581134684,"observation":"erosion on the left bank, severe root mats, showing root wads.","side":"River-left","rm":116.5,"match_m":29.6,"bank_height_ft":11.51,"left_ft":11.51,"right_ft":8.51,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#674","evImage":674},{"record":694,"time":"12:57:35","lat":41.44852896586752,"lon":-86.62512147716883,"observation":"erosion on the right bank, severe erosion. We're in a more of a riparian zone on both banks, wooded forest. From here looks like at least 50 meters on the right descending bank and 10 to 50 on the left descending bank.","side":"Both","rm":116.1,"match_m":83.3,"bank_height_ft":12.86,"left_ft":12.86,"right_ft":9.56,"qa":"High","len_min_m":50.0,"len_max_m":50.0,"area_min_m2":196.0,"area_max_m2":196.0,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#741","evImage":741},{"record":699,"time":"13:05:45","lat":41.44615362525795,"lon":-86.62737895307198,"observation":"s, severe erosion, straight in front of me on the right bank, same turbidity, some trash, but not much.","side":"River-right","rm":116.0,"match_m":79.8,"bank_height_ft":12.22,"left_ft":11.14,"right_ft":12.22,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#765","evImage":765},{"record":704,"time":"13:08:43","lat":41.44485899433941,"lon":-86.62866449840666,"observation":"erosion. This is an example of patches of heavy erosion along this grassy bank broken up by shrubs, not a lot of tree cover, some tree cover back away from the bank,","side":"Unspecified","rm":115.8,"match_m":74.6,"bank_height_ft":12.41,"left_ft":12.41,"right_ft":10.72,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#802","evImage":802},{"record":719,"time":"13:15:57","lat":41.44122578173811,"lon":-86.63237748743829,"observation":"erosion on the right bank, another clear example of severe erosion, tree roots, grass roots.","side":"River-right","rm":115.5,"match_m":63.8,"bank_height_ft":13.53,"left_ft":14.31,"right_ft":13.53,"qa":"Moderate","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#845","evImage":845},{"record":728,"time":"13:22:41","lat":41.4386291054548,"lon":-86.63586793481647,"observation":"undercut bank, severely undercut grassy bank. You can see the grass roots, the most undercut bank for a stretch of 30 meters or so. Good example of what undercut bank looks like in a grassy bank.","side":"Unspecified","rm":115.3,"match_m":33.9,"bank_height_ft":13.45,"left_ft":13.45,"right_ft":12.43,"qa":"Review recommended","len_min_m":30.0,"len_max_m":30.0,"area_min_m2":123.0,"area_max_m2":123.0,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#878","evImage":878},{"record":749,"time":"13:43:18","lat":41.43184478767057,"lon":-86.64373653136961,"observation":"erosion. Patch of severe erosion on the right bank.","side":"River-right","rm":114.7,"match_m":35.3,"bank_height_ft":13.88,"left_ft":7.99,"right_ft":13.88,"qa":"Moderate","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1001","evImage":1001},{"record":754,"time":"13:45:19","lat":41.43103041047896,"lon":-86.64507910498803,"observation":"erosion and the left bank severe grassy bank erosion all along here, this whole, long stretch.","side":"River-left","rm":114.6,"match_m":18.7,"bank_height_ft":7.9,"left_ft":7.9,"right_ft":13.35,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1015","evImage":1015},{"record":799,"time":"14:21:38","lat":41.41868625601527,"lon":-86.66378777434075,"observation":"erosion, severe erosion on the left bank for probably, well, 10s of meters, particularly bad","side":"River-left","rm":113.3,"match_m":51.9,"bank_height_ft":10.28,"left_ft":10.28,"right_ft":9.84,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1226","evImage":1226},{"record":840,"time":"14:47:01","lat":41.41254940315823,"lon":-86.6782637348781,"observation":"erosion. Nine o'clock, another open area with severe erosion for about a 10 meter section, GoPro Highlight shoreline development at three o'clock. There's a wooden platform. It's fairly old, with steel bar, steel posts holding it up.","side":"Both","rm":112.5,"match_m":74.7,"bank_height_ft":9.79,"left_ft":9.79,"right_ft":9.42,"qa":"High","len_min_m":10.0,"len_max_m":10.0,"area_min_m2":29.8,"area_max_m2":29.8,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1366","evImage":1366},{"record":892,"time":"15:16:06","lat":41.40432878636986,"lon":-86.69747913054836,"observation":"erosion, severe bank sloughing on the right side, grassy bank, sandy soil underneath.","side":"Unspecified","rm":111.3,"match_m":35.4,"bank_height_ft":9.87,"left_ft":9.87,"right_ft":7.73,"qa":"Moderate","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1551","evImage":1551},{"record":965,"time":"16:10:40","lat":41.38311175813531,"lon":-86.70758686383803,"observation":"(eric, ignore here) GoPro Highlight, erosion, light bang, severe undercut, bangs, this honey sucker here, memory card. Bottom, okay. Working Memory Card, bottom, drink it all.","side":"Unspecified","rm":109.7,"match_m":70.0,"bank_height_ft":12.18,"left_ft":8.26,"right_ft":12.18,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#1884","evImage":1884},{"record":1044,"time":"17:24:04","lat":41.35487769083795,"lon":-86.72442934206686,"observation":"erosion. On the left bank is an old tree stump severely undercut. It's a fascinating picture. I'm sure we can grab it from Eric's camera, because he's going right past it.","side":"River-left","rm":107.6,"match_m":41.3,"bank_height_ft":9.27,"left_ft":9.27,"right_ft":8.99,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2312","evImage":2312},{"record":1072,"time":"17:40:53","lat":41.34656333291509,"lon":-86.72829076685946,"observation":"erosion, old roots severely undercut. Pretty cool photo.","side":"Unspecified","rm":107.0,"match_m":69.8,"bank_height_ft":15.2,"left_ft":12.03,"right_ft":15.2,"qa":"Moderate","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2409","evImage":2409},{"record":1099,"time":"17:57:39","lat":41.33979148377946,"lon":-86.73394852646065,"observation":"erosion on the left bank. I wouldn't keep mentioning it, but it's pretty severe and extensive, going for hundreds of meters, basically.","side":"River-left","rm":106.4,"match_m":28.8,"bank_height_ft":10.01,"left_ft":10.01,"right_ft":13.45,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2520","evImage":2520},{"record":1128,"time":"18:25:11","lat":41.3245329304748,"lon":-86.73833780853005,"observation":"erosion, the continuous, kind of continuous erosion on the right bank, just failing grass cover, erosion on the left bank is moderate to severe as well, Almost to the next habitat locations.","side":"Both","rm":105.3,"match_m":36.5,"bank_height_ft":10.11,"left_ft":10.11,"right_ft":9.18,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2686","evImage":2686},{"record":1130,"time":"18:26:34","lat":41.32371213352425,"lon":-86.73888034973982,"observation":"erosion. More examples of erosion on the right bank, continuous patches of severe erosion.","side":"River-right","rm":105.3,"match_m":65.3,"bank_height_ft":9.18,"left_ft":10.11,"right_ft":9.18,"qa":"High","len_min_m":null,"len_max_m":null,"area_min_m2":null,"area_max_m2":null,"earthviews":"https://arcgis.earthviews.com/public/kankakee-river-20250509d#2686","evImage":2686}], C={"River-left":"#3182a4","River-right":"#c77b28","Both":"#7956a8","Unspecified":"#777"};let sel=null;
+const map=L.map("map");L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);const M=[];
+function len(d){if(d.len_min_m==null)return "Not stated";return d.len_min_m==d.len_max_m?d.len_min_m+" m":d.len_min_m+"–"+d.len_max_m+" m"}
+function area(d){if(d.area_min_m2==null)return "Not calculated";return d.area_min_m2==d.area_max_m2?d.area_min_m2+" m²":d.area_min_m2+"–"+d.area_max_m2+" m²"}
+function updateObsNav(){
+ document.getElementById("prevObs").disabled=(selIndex<=0);
+ document.getElementById("nextObs").disabled=(selIndex<0||selIndex>=D.length-1);
+}
+function pick(i,openPopup=true){
+ selIndex=i;
+ sel=D[i];
+ const d=sel;
+
+ // 1. Update text + EarthViews.
+ document.getElementById("detail").innerHTML=`<b>Record ${d.record} · RM ${d.rm.toFixed(1)}</b><br>${d.side}; spatial match ${d.match_m} m<br><br>${d.observation}<br><br><b>Bank height used:</b> ${d.bank_height_ft} ft<br>Left/right DEM heights: ${d.left_ft}/${d.right_ft} ft<br><b>Channel QA/QC:</b> ${d.qa}<br><b>Stated erosion length:</b> ${len(d)}<br><b>Estimated affected bank-face area:</b> ${area(d)}<br><br><a href="${d.earthviews}" target="_blank">Open EarthViews image ${d.evImage}</a>`;
+ document.getElementById("evFrame").src=d.earthviews;
+ document.getElementById("evLabel").innerHTML=`<b>Record ${d.record} · RM ${d.rm.toFixed(1)} · ${d.side}</b> · EarthViews image ${d.evImage}`;
+
+ // 2. Synchronize map FIRST, before any optional styling.
+ document.getElementById("mapLocationLabel").innerHTML=`<strong>EarthViews preview location:</strong> Record ${d.record} · RM ${d.rm.toFixed(1)} · ${d.side}`;
+ const marker=M[i];
+ if(marker){
+   map.setView(marker.getLatLng(),15,{animate:false});
+   marker.openPopup();
+ }
+
+ // 3. Optional selected-marker emphasis, isolated so it can never block map sync.
+ try{
+   if(selectedMarker && selectedMarker!==marker){
+     const oldi=M.indexOf(selectedMarker);
+     if(oldi>=0){
+       const od=D[oldi];
+       selectedMarker.setStyle({color:"#222",weight:1,fillColor:C[od.side],fillOpacity:.85});
+       if(selectedMarker.setRadius)selectedMarker.setRadius(7);
+     }
+   }
+   if(marker){
+     selectedMarker=marker;
+     selectedMarker.setStyle({color:"#000",weight:4,fillColor:C[d.side],fillOpacity:1});
+     if(selectedMarker.setRadius)selectedMarker.setRadius(11);
+     selectedMarker.bringToFront();
+   }
+ }catch(e){
+   console.warn("Marker emphasis skipped; map synchronization still completed.",e);
+ }
+
+ document.getElementById("calc").textContent=d.len_min_m==null?"No numeric erosion length was stated for this observation.":"";
+ document.getElementById("reachStartImage").value=d.evImage||"";
+ document.getElementById("reachEndImage").value=d.evImage||"";
+ document.getElementById("reachLengthFt").value="";
+ document.getElementById("erodedFractionPct").value="";
+ document.getElementById("reachConfidence").value="";
+ document.getElementById("reachBankSide").value=(d.side==="River-left"||d.side==="River-right"||d.side==="Both")?d.side:"";
+ document.getElementById("reachNotes").value="";
+ document.getElementById("reachCalc").innerHTML=`<strong>Selected Record ${d.record} at RM ${d.rm.toFixed(1)}.</strong><br>Use EarthViews to measure a continuous erosion reach, then enter the length and estimated severely eroded fraction.`;
+ document.querySelectorAll("#tb tr").forEach((tr,j)=>tr.style.background=(j===i?"#dfeff6":""));
+ updateObsNav();
+}
+D.forEach((d,i)=>{let m=L.circleMarker([d.lat,d.lon],{radius:7,color:"#222",weight:1,fillColor:C[d.side],fillOpacity:.85}).addTo(map).bindPopup(`<b>EARTHVIEWS PREVIEW LOCATION</b><br><b>Record ${d.record} · RM ${d.rm.toFixed(1)}</b><br>${d.side}<br>Bank height ${d.bank_height_ft} ft<br>Length ${len(d)}<br>Bank-face area ${area(d)}<br>QA/QC ${d.qa}`);m.on("click",()=>pick(i));M.push(m)});
+if(M.length)map.fitBounds(L.featureGroup(M).getBounds().pad(.08));
+function stepObs(delta){
+ if(!D.length)return;
+ let ni=selIndex<0?0:selIndex+delta;
+ if(ni<0||ni>=D.length)return;
+ pick(ni,true);
+}
+document.getElementById("prevObs").addEventListener("click",()=>stepObs(-1));
+document.getElementById("nextObs").addEventListener("click",()=>stepObs(1));
+document.getElementById("tb").innerHTML=D.map((d,i)=>`<tr onclick="pick(${i})"><td>${d.record}</td><td>${d.rm.toFixed(1)}</td><td>${d.side}</td><td>${d.bank_height_ft} ft</td><td>${len(d)}</td><td>${area(d)}</td><td>${d.observation}</td></tr>`).join("");
+if(D.length)pick(0,false);
+function calcReach(){
+ if(!sel){
+   document.getElementById("reachCalc").innerHTML="<strong>Select an erosion observation first.</strong>";
+   return;
+ }
+ const lengthFt=Number(document.getElementById("reachLengthFt").value);
+ const fracPct=Number(document.getElementById("erodedFractionPct").value);
+ const sideChoice=document.getElementById("reachBankSide").value||sel.side;
+ let bankHeightFt;
+ if(sideChoice==="River-left") bankHeightFt=sel.left_ft;
+ else if(sideChoice==="River-right") bankHeightFt=sel.right_ft;
+ else bankHeightFt=sel.bank_height_ft;
+
+ if(!(lengthFt>0)){
+   document.getElementById("reachCalc").innerHTML="<strong>Enter the EarthViews-measured erosion-reach length.</strong>";
+   return;
+ }
+ if(!(fracPct>=0 && fracPct<=100)){
+   document.getElementById("reachCalc").innerHTML="<strong>Enter an eroded fraction from 0 to 100%.</strong>";
+   return;
+ }
+
+ const totalAreaFt2=lengthFt*bankHeightFt;
+ const severeAreaFt2=totalAreaFt2*(fracPct/100);
+ const totalAreaM2=totalAreaFt2*0.09290304;
+ const severeAreaM2=severeAreaFt2*0.09290304;
+ const start=document.getElementById("reachStartImage").value||"—";
+ const end=document.getElementById("reachEndImage").value||"—";
+ const conf=document.getElementById("reachConfidence").value||"Not specified";
+
+ document.getElementById("reachCalc").innerHTML=
+ `<strong>Human-reviewed erosion reach</strong><br>
+ EarthViews images: ${start} → ${end}<br>
+ Bank side used: ${sideChoice}<br>
+ DEM bank height used: ${bankHeightFt.toFixed(1)} ft<br>
+ Measured reach length: ${lengthFt.toFixed(0)} ft<br>
+ Total bank-face area: <strong>${totalAreaFt2.toFixed(0)} ft²</strong> (${totalAreaM2.toFixed(1)} m²)<br>
+ Severely eroded fraction: ${fracPct.toFixed(0)}%<br>
+ Estimated severely eroded bank-face area: <strong>${severeAreaFt2.toFixed(0)} ft²</strong> (${severeAreaM2.toFixed(1)} m²)<br>
+ Measurement confidence: ${conf}`;
+}
+
+document.getElementById("calcReach").addEventListener("click",calcReach);
+
+function calc(){
+ if(!sel){
+   document.getElementById("calc").textContent="Select an erosion observation.";
+   return;
+ }
+ const measuredFt=Number(document.getElementById("reachLengthFt").value);
+ const fracPct=Number(document.getElementById("erodedFractionPct").value);
+ const sideChoice=document.getElementById("reachBankSide").value||sel.side;
+ let bankHeightFt;
+ if(sideChoice==="River-left") bankHeightFt=sel.left_ft;
+ else if(sideChoice==="River-right") bankHeightFt=sel.right_ft;
+ else bankHeightFt=sel.bank_height_ft;
+
+ let lengthM=null, source="";
+ if(measuredFt>0){
+   lengthM=measuredFt*0.3048;
+   source="EarthViews-measured reach length";
+ } else if(sel.len_min_m!=null){
+   lengthM=(sel.len_min_m+sel.len_max_m)/2;
+   source="midpoint of explicit verbal-observation length";
+ } else {
+   document.getElementById("calc").textContent="Enter an EarthViews-measured reach length, or select a record with an explicit numeric length.";
+   return;
+ }
+ const fraction=(fracPct>=0 && fracPct<=100)?fracPct/100:1;
+ const r=Number(document.getElementById("retreat").value);
+ const rho=Number(document.getElementById("density").value);
+ const hM=bankHeightFt*0.3048;
+ const severeFaceAreaM2=lengthM*hM*fraction;
+ const volumeM3=severeFaceAreaM2*r;
+ const massTonnes=volumeM3*rho/1000;
+
+ document.getElementById("calc").innerHTML=
+ `<b>Scenario estimate</b><br>
+ Length source: ${source}<br>
+ Severe bank-face area used: ${severeFaceAreaM2.toFixed(1)} m²<br>
+ Annual soil volume: ${volumeM3.toFixed(1)} m³/yr<br>
+ Sediment mass: ${massTonnes.toFixed(1)} metric tonnes/yr<br><br>
+ This is a scenario calculation, not a measured annual erosion rate.`;
+}
+</script></body></html>

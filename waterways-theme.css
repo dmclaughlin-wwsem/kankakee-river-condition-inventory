@@ -199,3 +199,60 @@ p,li,span,div,input,select{font-family:"Mulish",Arial,sans-serif}
   background:var(--ww-superior) !important;
   color:var(--ww-erie) !important;
 }
+
+/* Simplified Interactive River Explorer — September 2026 */
+/* Remove the six permanent segment callouts and all connector geometry. */
+.leaflet-tooltip.segment-label,
+.leader-line,
+.leader-anchor{
+  display:none !important;
+}
+
+/* Retire the Google Earth flyover presentation from the public Explorer. */
+.segment-video-link,
+.flyover-info-button,
+#flyoverInfoPopover,
+#videoModal{
+  display:none !important;
+}
+
+/* Replace the GPX-panel introduction with the simplified user instructions. */
+.explorer-shell #side > .intro{
+  font-size:0;
+  line-height:0;
+}
+.explorer-shell #side > .intro::after{
+  content:'Six survey tracks from the 2025 survey are displayed on the map, along with the watershed boundary. Scroll down the left panel for more information about each track. Click "Open EarthViews trip preview" followed by "Play" to view an automated river-mile trip replay with synchronized EarthViews 360° image previews.';
+  display:block;
+  font-family:"Mulish",Arial,sans-serif;
+  font-size:13px;
+  line-height:1.4;
+  color:#52606d;
+}
+
+/* Remove outdated flyover/leader-line wording from the most visible Explorer copy. */
+#explorer .explorer-heading .section-lead{
+  font-size:0;
+  line-height:0;
+}
+#explorer .explorer-heading .section-lead::after{
+  content:'Explore all six survey segments, launch the 75-mile trip replay, view EarthViews 360° kayak imagery while a marker moves along a fixed full-route map, and turn on watershed and Indiana DNR river-mile layers.';
+  display:block;
+  font-family:"Mulish",Arial,sans-serif;
+  font-size:17px;
+  line-height:1.6;
+  color:#405862;
+}
+
+.replay-note{
+  font-size:0;
+  line-height:0;
+}
+.replay-note::after{
+  content:'Open the EarthViews preview first, adjust your screen if needed, and then press Play. The full route remains fixed and is positioned below the preview while the location marker advances. Default stops occur about every two Indiana DNR river miles. EarthViews locations are synchronized from the full timestamped GPX route using the tour\'s 10-second image sequence. Use the full-location link if embedded display is blocked.';
+  display:block;
+  font-family:"Mulish",Arial,sans-serif;
+  font-size:10px;
+  line-height:1.35;
+  color:#64727d;
+}
